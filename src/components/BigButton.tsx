@@ -26,6 +26,8 @@ export interface BigButtonProps {
   className?: string;
   /** Custom aria-label */
   ariaLabel?: string;
+  /** Button element type */
+  type?: "button" | "submit" | "reset";
   /** Disabled state */
   disabled?: boolean;
 }
@@ -51,6 +53,7 @@ export const BigButton: React.FC<BigButtonProps> = ({
   variant = "primary",
   className = "",
   ariaLabel,
+  type = "button",
   disabled = false,
 }) => {
   let variantStyles =
@@ -114,6 +117,7 @@ export const BigButton: React.FC<BigButtonProps> = ({
     return (
       <Link
         href={href}
+        role="button"
         className={baseStyles}
         aria-label={ariaLabel}
         data-nav-item="true"
@@ -126,7 +130,7 @@ export const BigButton: React.FC<BigButtonProps> = ({
 
   return (
     <button
-      type="button"
+      type={type}
       onClick={onClick}
       disabled={disabled}
       className={baseStyles}

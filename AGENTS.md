@@ -53,8 +53,13 @@ If a design decision is a trade-off between power and simplicity, ALWAYS choose 
    - Noto Sans Telugu + Inter, self-hosted via `next/font/local`.
    - Verify Telugu conjuncts render correctly (e.g., "కుటుంబ వీడియోలు").
 
-9. **STACK**:
-   - Next.js App Router, TypeScript (strict), Tailwind CSS, Prisma + PostgreSQL, Auth.js, S3-compatible storage (Cloudflare R2 / MinIO), ffmpeg worker (`pg-boss` queue), Vitest + Playwright.
+9. **STACK (ZERO-OPS)**:
+   - Next.js App Router, TypeScript (strict), Tailwind CSS, Prisma + PostgreSQL (Neon), Cloudflare R2 (S3-compatible, zero egress fees), Vitest + Playwright.
+   - **ZERO-OPS ARCHITECTURE**: No ffmpeg worker, no job queue, no HLS, no Docker, no VPS.
+   - Videos play directly as browser-safe MP4 (H.264 + AAC, faststart) via signed URLs and HTTP byte-range requests.
+   - Photo resizing, poster frame capture, and metadata extraction happen entirely in the admin's browser at upload time.
+   - If an uploaded video is not browser-playable (e.g., MKV/HEVC), the upload UI provides friendly HandBrake conversion instructions (preset Fast 720p30).
+   - Admin logs in via passphrase (`ADMIN_PASSPHRASE_HASH`); Family members use single-use 24-hour device links only (no passwords).
 
 10. **QUALITY**:
     - Small components, no dead code, env vars in `.env.example`, secrets never committed.

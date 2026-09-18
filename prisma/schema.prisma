@@ -20,24 +20,8 @@ enum MediaType {
 }
 
 enum MediaStatus {
-  UPLOADING
-  PROCESSING
   READY
-  FAILED
-}
-
-enum JobType {
-  TRANSCODE
-  THUMBNAILS
-  POSTER
-  EXTRACT_SUBTITLES
-  METADATA
-}
-
-enum JobStatus {
-  PENDING
-  ACTIVE
-  COMPLETED
+  PROCESSING
   FAILED
 }
 
@@ -48,7 +32,7 @@ model User {
   name_te       String
   role          Role            @default(FAMILY)
   avatarKey     String?
-  pinHash       String?
+  pinHash       String?         // Optional 4-digit PIN for shared profiles, default null
   textSize      String          @default("EXTRA_LARGE") // LARGE, EXTRA_LARGE, HUGE
   highContrast  Boolean         @default(false)
   createdAt     DateTime        @default(now())
@@ -56,7 +40,6 @@ model User {
 
   devices       Device[]
   invites       DeviceLink[]    @relation("TargetUser")
-  createdLinks  DeviceLink[]    @relation("CreatedByAdmin")
   favorites     Favorite[]
   watchProgress WatchProgress[]
 
@@ -67,13 +50,13 @@ model Device {
   id           String    @id @default(cuid())
   userId       String
   user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  deviceName   String
-  tokenHash    String    @unique
+  deviceName   String    // e.g. "Amma's Phone", "Living Room TV"
+  tokenHash    String    @unique // SHA-256 hash of revocable 12-month session token
   lastSeenAt   DateTime  @default(now())
   userAgent    String?
   ipAddress    String?
   isRevoked    Boolean   @default(false)
-  expiresAt    DateTime
+  expiresAt    DateTime  // 12 months from redemption
   createdAt    DateTime  @default(now())
 
   @@index([tokenHash])
@@ -84,20 +67,20 @@ model DeviceLink {
   id                String    @id @default(cuid())
   userId            String
   user              User      @relation("TargetUser", fields: [userId], references: [id], onDelete: Cascade)
-  tokenHash         String    @unique
-  createdByAdminId  String
-  createdByAdmin    User      @relation("CreatedByAdmin", fields: [createdByAdminId], references: [id])
-  expiresAt         DateTime
+  tokenHash         String    @unique // Single-use 24-hour token (SHA-256)
+  createdByAdminId  String?
+  expiresAt         DateTime  // 24 hours from creation
   usedAt            DateTime?
   createdAt         DateTime  @default(now())
 
   @@index([tokenHash])
+  @@index([userId])
 }
 
 model MediaItem {
   id                 String       @id @default(cuid())
   type               MediaType
-  status             MediaStatus  @default(UPLOADING)
+  status             MediaStatus  @default(READY)
   failureReason      String?
   title_en           String
   title_te           String
@@ -108,14 +91,10 @@ model MediaItem {
   checksumSha256     String
   mimeType           String
 
-  originalKey        String
-  hlsMasterKey       String?
-  mp4FallbackKey     String?
-  posterKey          String?
-  hoverSpriteKey     String?
-  thumbsJson         Json?
-  audioTracksJson    Json?
-  subtitleTracksJson Json?
+  originalKey        String       // originals/{type}/{yyyy}/{mediaId}/{filename}
+  posterKey          String?      // posters/{mediaId}.jpg (extracted in admin browser)
+  thumbKey           String?      // thumbs/{mediaId}.webp (resized in admin browser)
+  subtitleKey        String?      // subtitles/{mediaId}.vtt (sidecar WebVTT)
   metadataJson       Json?
 
   folderPath         String?      @default("/")
@@ -126,7 +105,6 @@ model MediaItem {
   albumItems         AlbumItem[]
   favorites          Favorite[]
   watchProgress      WatchProgress[]
-  transcodeJobs      TranscodeJob[]
 
   @@index([type, status])
   @@index([takenAt])
@@ -190,18 +168,8 @@ model WatchProgress {
   @@index([userId, lastWatchedAt])
 }
 
-model TranscodeJob {
-  id           String     @id @default(cuid())
-  mediaItemId  String
-  mediaItem    MediaItem  @relation(fields: [mediaItemId], references: [id], onDelete: Cascade)
-  bossJobId    String?
-  jobType      JobType
-  status       JobStatus  @default(PENDING)
-  progress     Int        @default(0)
-  errorMessage String?
-  startedAt    DateTime?
-  completedAt  DateTime?
-  createdAt    DateTime   @default(now())
-
-  @@index([mediaItemId, status])
+model SystemSetting {
+  key         String    @id
+  value       String
+  updatedAt   DateTime  @updatedAt
 }

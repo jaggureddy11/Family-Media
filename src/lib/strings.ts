@@ -221,6 +221,96 @@ export const STRINGS = {
     en: "Huge",
     te: "అతి పెద్దది",
   },
+
+  // --- Auth, Device Links & Family Admin ---
+  adminLogin: {
+    en: "Admin Login",
+    te: "అడ్మిన్ లాగిన్",
+  },
+  passphraseLabel: {
+    en: "Admin Passphrase",
+    te: "అడ్మిన్ పాస్‌ఫ్రేజ్",
+  },
+  loginButton: {
+    en: "Log in",
+    te: "లాగిన్ అవ్వండి",
+  },
+  invalidPassphrase: {
+    en: "Incorrect passphrase. Please try again.",
+    te: "తప్పు పాస్‌ఫ్రేజ్. దయచేసి మళ్ళీ ప్రయత్నించండి.",
+  },
+  tooManyAttempts: {
+    en: "Too many attempts. Please try again in 15 minutes.",
+    te: "చాలా ప్రయత్నాలు జరిగాయి. 15 నిమిషాల తర్వాత ప్రయత్నించండి.",
+  },
+  deviceLinkExpired: {
+    en: "This link has expired. Ask family to send a new link.",
+    te: "ఈ లింక్ గడువు ముగిసింది. కొత్త లింక్ పంపమని కుటుంబ సభ్యులను అడగండి.",
+  },
+  deviceLinkAlreadyUsed: {
+    en: "This link has already been used. Ask family for a new link.",
+    te: "ఈ లింక్ ఇప్పటికే ఉపయోగించబడింది. కొత్త లింక్ కోసం కుటుంబ సభ్యులను అడగండి.",
+  },
+  deviceRevoked: {
+    en: "This device has been signed out. Ask family for a new link.",
+    te: "ఈ పరికరం సైన్ అవుట్ చేయబడింది. కొత్త లింక్ కోసం కుటుంబ సభ్యులను అడగండి.",
+  },
+  familyMembers: {
+    en: "Family Members",
+    te: "కుటుంబ సభ్యులు",
+  },
+  addFamilyMember: {
+    en: "Add Family Member",
+    te: "కుటుంబ సభ్యుడిని చేర్చండి",
+  },
+  createDeviceLink: {
+    en: "Create device link",
+    te: "లింక్ సృష్టించండి",
+  },
+  deviceLinkCreated: {
+    en: "Device link created! Send this to family:",
+    te: "పరికరం లింక్ సృష్టించబడింది! కుటుంబ సభ్యులకు పంపండి:",
+  },
+  copyLink: {
+    en: "Copy link",
+    te: "లింక్ కాపీ చేయండి",
+  },
+  copied: {
+    en: "Copied!",
+    te: "కాపీ చేయబడింది!",
+  },
+  sendViaWhatsApp: {
+    en: "Send on WhatsApp",
+    te: "వాట్సాప్‌లో పంపండి",
+  },
+  activeDevices: {
+    en: "Active Devices",
+    te: "యాక్టివ్ పరికరాలు",
+  },
+  signOutDevice: {
+    en: "Sign out this device",
+    te: "ఈ పరికరాన్ని సైన్ అవుట్ చేయండి",
+  },
+  deviceSignedOut: {
+    en: "Device signed out",
+    te: "పరికరం సైన్ అవుట్ చేయబడింది",
+  },
+  memberName: {
+    en: "Member Name",
+    te: "సభ్యుని పేరు",
+  },
+  role: {
+    en: "Role",
+    te: "పాత్ర",
+  },
+  lastSeen: {
+    en: "Last seen",
+    te: "చివరిగా చూసిన సమయం",
+  },
+  expiresIn: {
+    en: "Expires in",
+    te: "గడువు ముగిసే సమయం",
+  },
 } as const satisfies Record<string, BilingualText>;
 
 export type StringKey = keyof typeof STRINGS;
