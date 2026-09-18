@@ -1,36 +1,60 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Kutumbam · కుటుంబం
 
-## Getting Started
+A private, ad-free, bilingual (Telugu + English) family media streaming and memories website.
 
-First, run the development server:
+> **North Star:** *"Technology for Mom, not Mom for Technology."*  
+> Designed specifically for an elderly Telugu-speaking mother with low vision / short-sightedness who is uncomfortable with complex smartphone apps.
 
+---
+
+## Key Principles & Rules
+
+1. **Bilingual Everywhere:** Every visible element displays "English · తెలుగు" via `<Bi>` and `src/lib/strings.ts`. No language switches.
+2. **Low-Vision First:**
+   - Body text >= 26px (TV: 40px+)
+   - Buttons >= 28px font, min 88px tall
+   - Headings >= 40px (TV: 64px+)
+   - Minimum contrast ratio >= 10:1 (targeting 14:1+)
+   - Telugu font weight >= 500 (Medium)
+   - Controllable via `--text-scale` (`Large` = 1.0, `Extra Large` = 1.25, `Huge` = 1.5)
+3. **No Dead Ends:** Every single screen has persistent, high-contrast **Home · హోమ్** and **Back · వెనుకకు** buttons.
+4. **TV & D-Pad Remote Ready:** Spatial navigation works via arrow keys, Enter, and Escape/Backspace without requiring a mouse.
+5. **Private by Default:** Zero tracking, no public routes, short-lived signed media URLs.
+
+---
+
+## Local Development Setup
+
+### 1. Prerequisites
+- Node.js 20+
+- PostgreSQL (local instance, Docker, or Neon/Supabase)
+
+### 2. Installation
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone <repo-url> kutumbam
+cd kutumbam
+npm install
+cp .env.example .env
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 3. Database
+```bash
+npx prisma generate
+# When PostgreSQL is running:
+npx prisma db push
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 4. Running the Dev Server
+```bash
+npm run dev
+```
+Open [http://localhost:3000](http://localhost:3000) to view the application, or [http://localhost:3000/styleguide](http://localhost:3000/styleguide) to review the design system.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 5. Running Tests
+```bash
+# Unit & accessibility guard tests
+npm run test
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+# End-to-end Playwright tests
+npm run test:e2e
+```

@@ -1,26 +1,121 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Text Scale: Large (1.0), Extra Large (1.25, default for Mom), Huge (1.5) */
+  --text-scale: 1.25;
+
+  /* Font Families */
+  --font-inter: "Inter", system-ui, sans-serif;
+  --font-telugu: "Noto Sans Telugu", "Kohinoor Telugu", sans-serif;
+
+  /* Typography Scales (Using rem for browser text scaling and zoom safety) */
+  --text-min: calc(1.5rem * var(--text-scale));        /* >= 24px */
+  --text-body: calc(1.625rem * var(--text-scale));     /* >= 26px */
+  --text-btn: calc(1.75rem * var(--text-scale));       /* >= 28px */
+  --text-heading: calc(2.5rem * var(--text-scale));    /* >= 40px */
+  --text-tv-body: calc(2.5rem * var(--text-scale));    /* >= 40px on TV */
+  --text-tv-heading: calc(4rem * var(--text-scale));   /* >= 64px on TV */
+
+  /* Surface & Contrast: Dark Theme (Default for movie/TV experience) */
+  --bg-main: #0b0f19;
+  --bg-surface: #141c2e;
+  --bg-surface-elevated: #1e293b;
+  --text-primary: #ffffff;
+  --text-secondary: #e2e8f0;
+  --border-subtle: #334155;
+  --border-thick: #475569;
+  --accent: #facc15; /* High-contrast golden yellow */
+  --accent-foreground: #000000;
+  --focus-ring: #facc15;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* Light Surface Theme ("Day" mode for Photos and Reading) */
+[data-theme="light"] {
+  --bg-main: #f8fafc;
+  --bg-surface: #ffffff;
+  --bg-surface-elevated: #f1f5f9;
+  --text-primary: #020617;
+  --text-secondary: #1e293b;
+  --border-subtle: #cbd5e1;
+  --border-thick: #94a3b8;
+  --accent: #d97706;
+  --accent-foreground: #ffffff;
+  --focus-ring: #2563eb;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* High Contrast Mode: Pure black + yellow / pure white */
+[data-theme="high-contrast"] {
+  --bg-main: #000000;
+  --bg-surface: #000000;
+  --bg-surface-elevated: #111111;
+  --text-primary: #ffffff;
+  --text-secondary: #facc15;
+  --border-subtle: #ffffff;
+  --border-thick: #ffffff;
+  --accent: #facc15;
+  --accent-foreground: #000000;
+  --focus-ring: #facc15;
+}
+
+/* Text scale utility classes */
+[data-text-scale="large"] {
+  --text-scale: 1.0;
+}
+[data-text-scale="extra-large"] {
+  --text-scale: 1.25;
+}
+[data-text-scale="huge"] {
+  --text-scale: 1.5;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  font-family: var(--font-inter), var(--font-telugu), sans-serif;
+  font-size: var(--text-body);
+  line-height: 1.7;
+  letter-spacing: 0.01em;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  max-width: 100vw;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Telugu text typography rules: medium+ weight, extra line-height */
+:lang(te), [lang="te"] {
+  font-family: var(--font-telugu), sans-serif;
+  font-weight: 600;
+  line-height: 1.75;
+}
+
+/* TV Mode (10-Foot UI) */
+@media (min-width: 1800px), (min-height: 1000px) and (min-width: 1400px) {
+  body.tv-mode, :root.tv-mode body {
+    font-size: var(--text-tv-body);
+  }
+}
+
+/* High-visibility 6px focus ring for TV remote D-Pad & Keyboard navigation */
+.kutumbam-focus {
+  outline: none;
+  transition: box-shadow 0.15s ease-in-out, transform 0.15s ease-in-out;
+}
+
+.kutumbam-focus:focus-visible,
+.kutumbam-focus[data-focused="true"] {
+  box-shadow: 0 0 0 6px var(--focus-ring), 0 0 0 10px rgba(0, 0, 0, 0.8) !important;
+  transform: scale(1.02);
+  z-index: 20;
+}
+
+/* Motion reduction preference */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
