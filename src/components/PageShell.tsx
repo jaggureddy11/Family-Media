@@ -23,6 +23,10 @@ export interface PageShellProps {
   headerAction?: React.ReactNode;
   /** Page main content */
   children: React.ReactNode;
+  /** Optional flag indicating an admin-only view */
+  adminOnly?: boolean;
+  /** Optional admin or section navigation items */
+  navItems?: Array<{ key: string; href: string }>;
   /** Optional extra classes for content area */
   contentClassName?: string;
 }
@@ -41,6 +45,8 @@ export const PageShell: React.FC<PageShellProps> = ({
   showHome = true,
   backHref,
   headerAction,
+  adminOnly,
+  navItems,
   children,
   contentClassName = "",
 }) => {
@@ -127,6 +133,26 @@ export const PageShell: React.FC<PageShellProps> = ({
           )}
         </div>
       </header>
+
+      {/* Admin/Section Sub-Navigation Bar */}
+      {navItems && navItems.length > 0 && (
+        <nav
+          aria-label="Admin Navigation"
+          className="bg-[var(--bg-surface)] border-b-4 border-[var(--border-subtle)] px-4 py-3"
+        >
+          <div className="max-w-7xl mx-auto flex flex-wrap items-center gap-3">
+            {navItems.map((item) => (
+              <a
+                key={item.href}
+                href={item.href}
+                className="px-4 py-2 rounded-xl text-[var(--text-body)] font-semibold border-2 border-[var(--border-thick)] hover:bg-[var(--bg-surface-elevated)] transition-colors focus:ring-4 focus:ring-yellow-400"
+              >
+                <Bi k={item.key as any} />
+              </a>
+            ))}
+          </div>
+        </nav>
+      )}
 
       {/* Main Page Content */}
       <main className={`flex-1 w-full max-w-7xl mx-auto p-4 sm:p-8 ${contentClassName}`}>

@@ -1,0 +1,370 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
+import { PageShell } from "@/components/PageShell";
+import { Bi } from "@/components/Bi";
+import { BigButton } from "@/components/BigButton";
+import {
+  Search,
+  Filter,
+  Film,
+  Image as ImageIcon,
+  Video,
+  FileText,
+  Trash2,
+  Save,
+  AlertCircle,
+  CheckCircle2,
+  FolderPlus,
+  RefreshCw,
+  Plus,
+} from "lucide-react";
+
+interface MediaItem {
+  id: string;
+  type: "MOVIE" | "PHOTO" | "FAMILY_VIDEO" | "FILE";
+  status: "READY" | "PROCESSING" | "FAILED";
+  titleEn: string;
+  titleTe: string;
+  originalName: string;
+  year?: number;
+  durationSec?: number;
+  sizeBytes: string;
+  posterUrl?: string;
+  thumbUrl?: string;
+  createdAt: string;
+  albumItems?: Array<{ album: { id: string; titleEn: string; titleTe: string } }>;
+}
+
+export default function AdminLibraryPage() {
+  const [items, setItems] = useState<MediaItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [typeFilter, setTypeFilter] = useState("ALL");
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<{ titleEn: string; titleTe: string; year?: number }>({
+    titleEn: "",
+    titleTe: "",
+  });
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
+
+  const fetchItems = async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (typeFilter !== "ALL") params.append("type", typeFilter);
+      if (statusFilter !== "ALL") params.append("status", statusFilter);
+      if (searchQuery.trim()) params.append("q", searchQuery.trim());
+
+      const res = await fetch(`/api/admin/media?${params.toString()}`);
+      const data = await res.json();
+      setItems(data.items || []);
+    } catch (err) {
+      console.error("Failed to load library items:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchItems();
+  }, [typeFilter, statusFilter]);
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    fetchItems();
+  };
+
+  const startEdit = (item: MediaItem) => {
+    setEditingId(item.id);
+    setEditForm({
+      titleEn: item.titleEn,
+      titleTe: item.titleTe,
+      year: item.year,
+    });
+  };
+
+  const saveEdit = async (id: string) => {
+    try {
+      const res = await fetch("/api/admin/media", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id,
+          titleEn: editForm.titleEn,
+          titleTe: editForm.titleTe,
+          year: editForm.year,
+        }),
+      });
+
+      if (res.ok) {
+        setEditingId(null);
+        setActionMessage("Item updated successfully!");
+        setTimeout(() => setActionMessage(null), 3000);
+        fetchItems();
+      }
+    } catch (err) {
+      console.error("Failed to save changes:", err);
+    }
+  };
+
+  const deleteItem = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this media item?")) return;
+
+    try {
+      const res = await fetch(`/api/admin/media?id=${id}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setItems((prev) => prev.filter((it) => it.id !== id));
+        setActionMessage("Item deleted!");
+        setTimeout(() => setActionMessage(null), 3000);
+      }
+    } catch (err) {
+      console.error("Failed to delete item:", err);
+    }
+  };
+
+  return (
+    <PageShell
+      titleKey="library"
+      adminOnly
+      navItems={[
+        { key: "uploadMedia", href: "/admin/upload" },
+        { key: "activeDevices", href: "/admin/devices" },
+        { key: "familyMembers", href: "/admin/family" },
+      ]}
+    >
+      <div className="max-w-6xl mx-auto space-y-8 pb-16">
+        {/* Top Controls Bar */}
+        <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
+          <form onSubmit={handleSearchSubmit} className="flex-1 flex gap-3">
+            <div className="relative flex-1">
+              <Search className="w-8 h-8 absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search media / శోధించండి..."
+                className="w-full min-h-[64px] pl-16 pr-6 text-[var(--text-body)] bg-[var(--bg-surface-elevated)] text-white border-4 border-[var(--border-thick)] rounded-2xl"
+              />
+            </div>
+            <BigButton
+              en="Search"
+              te="శోధించండి"
+              variant="accent"
+              type="submit"
+              icon={<Search className="w-6 h-6" />}
+            />
+          </form>
+
+          <BigButton
+            k="uploadMedia"
+            href="/admin/upload"
+            variant="primary"
+            icon={<Plus className="w-7 h-7" />}
+          />
+        </div>
+
+        {/* Filter Pills */}
+        <div className="flex flex-wrap gap-3 items-center">
+          {[
+            { id: "ALL", en: "All Media", te: "అన్నీ" },
+            { id: "MOVIE", en: "Movies", te: "సినిమాలు" },
+            { id: "PHOTO", en: "Photos", te: "ఫోటోలు" },
+            { id: "FAMILY_VIDEO", en: "Family Videos", te: "కుటుంబ వీడియోలు" },
+            { id: "FILE", en: "Files", te: "ఇతర ఫైళ్లు" },
+          ].map((f) => (
+            <button
+              key={f.id}
+              type="button"
+              onClick={() => setTypeFilter(f.id)}
+              className={`min-h-[56px] px-6 rounded-2xl font-bold text-[var(--text-body)] border-4 transition-all ${
+                typeFilter === f.id
+                  ? "bg-[var(--color-primary-yellow)] text-black border-white"
+                  : "bg-[var(--bg-surface-elevated)] text-white border-[var(--border-subtle)] hover:border-slate-400"
+              }`}
+            >
+              {f.en} · {f.te}
+            </button>
+          ))}
+        </div>
+
+        {/* Feedback Message */}
+        {actionMessage && (
+          <div className="p-5 bg-emerald-950/80 border-4 border-emerald-500 rounded-2xl text-emerald-200 font-bold text-[var(--text-body)]">
+            {actionMessage}
+          </div>
+        )}
+
+        {/* Media Items List / Table */}
+        {loading ? (
+          <div className="p-16 text-center text-white text-[var(--text-body)] font-medium">
+            Loading media library...
+          </div>
+        ) : items.length === 0 ? (
+          <div className="p-16 text-center bg-[var(--bg-surface-elevated)] border-4 border-[var(--border-subtle)] rounded-3xl space-y-6">
+            <Film className="w-20 h-20 text-slate-500 mx-auto" />
+            <h3 className="text-[var(--text-heading)] font-bold text-white">
+              No media items found
+            </h3>
+            <BigButton
+              k="uploadMedia"
+              href="/admin/upload"
+              variant="accent"
+              className="mx-auto"
+            />
+          </div>
+        ) : (
+          <div className="space-y-6">
+            <div className="text-slate-300 font-bold text-[var(--text-body)]">
+              Showing {items.length} items
+            </div>
+
+            <div className="grid grid-cols-1 gap-6">
+              {items.map((item) => {
+                const isEditing = editingId === item.id;
+
+                return (
+                  <div
+                    key={item.id}
+                    className="bg-[var(--bg-surface-elevated)] border-4 border-[var(--border-thick)] rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row gap-6 items-start md:items-center justify-between"
+                  >
+                    {/* Media Thumbnail / Poster Preview */}
+                    <div className="w-28 h-36 bg-slate-900 rounded-2xl overflow-hidden shrink-0 border-2 border-slate-600 flex items-center justify-center">
+                      {item.posterUrl || item.thumbUrl ? (
+                        <img
+                          src={item.posterUrl || item.thumbUrl}
+                          alt={item.titleEn}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : item.type === "MOVIE" ? (
+                        <Film className="w-12 h-12 text-slate-500" />
+                      ) : item.type === "PHOTO" ? (
+                        <ImageIcon className="w-12 h-12 text-slate-500" />
+                      ) : item.type === "FAMILY_VIDEO" ? (
+                        <Video className="w-12 h-12 text-slate-500" />
+                      ) : (
+                        <FileText className="w-12 h-12 text-slate-500" />
+                      )}
+                    </div>
+
+                    {/* Metadata & Inline Edit */}
+                    <div className="flex-1 space-y-3 w-full">
+                      {isEditing ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                          <input
+                            type="text"
+                            value={editForm.titleEn}
+                            onChange={(e) =>
+                              setEditForm({ ...editForm, titleEn: e.target.value })
+                            }
+                            placeholder="English title"
+                            className="min-h-[56px] px-4 bg-slate-900 text-white border-2 border-slate-500 rounded-xl text-[var(--text-body)]"
+                          />
+                          <input
+                            type="text"
+                            value={editForm.titleTe}
+                            onChange={(e) =>
+                              setEditForm({ ...editForm, titleTe: e.target.value })
+                            }
+                            placeholder="తెలుగు శీర్షిక"
+                            className="min-h-[56px] px-4 bg-slate-900 text-white border-2 border-slate-500 rounded-xl text-[var(--text-body)] font-sans"
+                          />
+                          <input
+                            type="number"
+                            value={editForm.year || ""}
+                            onChange={(e) =>
+                              setEditForm({
+                                ...editForm,
+                                year: e.target.value ? parseInt(e.target.value, 10) : undefined,
+                              })
+                            }
+                            placeholder="Year"
+                            className="min-h-[56px] px-4 bg-slate-900 text-white border-2 border-slate-500 rounded-xl text-[var(--text-body)]"
+                          />
+                        </div>
+                      ) : (
+                        <div>
+                          <h3 className="text-[var(--text-heading)] font-bold text-white">
+                            {item.titleEn}
+                            {item.year && (
+                              <span className="text-slate-400 ml-3 text-[0.8em]">
+                                ({item.year})
+                              </span>
+                            )}
+                          </h3>
+                          <div className="text-[var(--text-body)] font-bold text-[var(--color-primary-yellow)] font-sans mt-1">
+                            {item.titleTe}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex flex-wrap items-center gap-4 text-slate-400 text-[var(--text-caption)] font-medium">
+                        <span className="px-3 py-1 bg-slate-800 rounded-lg text-white font-bold border border-slate-600">
+                          {item.type}
+                        </span>
+                        <span>{item.originalName}</span>
+                        {item.durationSec && (
+                          <span>
+                            {Math.floor(item.durationSec / 60)}m {item.durationSec % 60}s
+                          </span>
+                        )}
+                        <span className="text-emerald-400 font-bold flex items-center gap-1">
+                          <CheckCircle2 className="w-5 h-5" />
+                          Ready
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-3 shrink-0 self-end md:self-center">
+                      {isEditing ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => saveEdit(item.id)}
+                            className="min-h-[56px] px-5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl flex items-center gap-2 border-2 border-emerald-400"
+                          >
+                            <Save className="w-6 h-6" />
+                            <Bi k="save" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setEditingId(null)}
+                            className="min-h-[56px] px-5 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl border border-slate-600"
+                          >
+                            <Bi k="cancel" />
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => startEdit(item)}
+                            className="min-h-[56px] px-5 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl border-2 border-slate-500"
+                          >
+                            <Bi k="edit" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => deleteItem(item.id)}
+                            className="p-3 text-slate-400 hover:text-red-400 focus:ring-4 focus:ring-red-400 rounded-xl"
+                            aria-label="Delete item · ఫైల్‌ను తొలగించండి"
+                          >
+                            <Trash2 className="w-7 h-7" />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    </PageShell>
+  );
+}

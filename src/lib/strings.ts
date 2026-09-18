@@ -311,6 +311,140 @@ export const STRINGS = {
     en: "Expires in",
     te: "గడువు ముగిసే సమయం",
   },
+
+  // --- Upload & In-Browser Processing ---
+  uploadMedia: {
+    en: "Upload Media",
+    te: "మీడియాను అప్‌లోడ్ చేయండి",
+  },
+  dragAndDrop: {
+    en: "Drag and drop files here, or tap to choose files",
+    te: "ఫైళ్లను ఇక్కడ డ్రాగ్ చేయండి, లేదా ఎంచుకోవడానికి నొక్కండి",
+  },
+  selectFiles: {
+    en: "Select Files",
+    te: "ఫైళ్లను ఎంచుకోండి",
+  },
+  selectFolder: {
+    en: "Select Folder",
+    te: "ఫోల్డర్‌ను ఎంచుకోండి",
+  },
+  uploading: {
+    en: "Uploading...",
+    te: "అప్‌లోడ్ అవుతోంది...",
+  },
+  uploadComplete: {
+    en: "Upload complete!",
+    te: "అప్‌లోడ్ పూర్తయింది!",
+  },
+  retry: {
+    en: "Retry",
+    te: "మళ్ళీ ప్రయత్నించండి",
+  },
+  cancel: {
+    en: "Cancel",
+    te: "రద్దు చేయండి",
+  },
+  handbrakeNoticeTitle: {
+    en: "Video Needs Conversion",
+    te: "వీడియోను మార్చడం అవసరం",
+  },
+  handbrakeNoticeDesc: {
+    en: "This video is not browser-playable. Convert this with HandBrake, preset Fast 720p30, then upload again.",
+    te: "ఈ వీడియో బ్రౌజర్‌లో నేరుగా ప్లే అవ్వదు. దీనిని HandBrake యాప్‌తో (Fast 720p30 ప్రీసెట్) మార్చి, మళ్ళీ అప్‌లోడ్ చేయండి.",
+  },
+  duplicateWarning: {
+    en: "This file has already been uploaded.",
+    te: "ఈ ఫైల్ ఇప్పటికే అప్‌లోడ్ చేయబడింది.",
+  },
+  duplicateNotice: {
+    en: "Duplicate detected",
+    te: "డూప్లికేట్ ఫైల్ కనుగొనబడింది",
+  },
+  titleEnglish: {
+    en: "English Title",
+    te: "ఇంగ్లీష్ శీర్షిక",
+  },
+  titleTelugu: {
+    en: "Telugu Title",
+    te: "తెలుగు శీర్షిక",
+  },
+  releaseYear: {
+    en: "Release Year",
+    te: "విడుదల సంవత్సరం",
+  },
+  mediaCategory: {
+    en: "Category",
+    te: "వర్గం",
+  },
+  edit: {
+    en: "Edit",
+    te: "సవరించండి",
+  },
+  save: {
+    en: "Save",
+    te: "సేవ్ చేయండి",
+  },
+  saveChanges: {
+    en: "Save Changes",
+    te: "మార్పులను భద్రపరచండి",
+  },
+  deleteItem: {
+    en: "Delete Item",
+    te: "ఫైల్‌ను తొలగించండి",
+  },
+  confirmDelete: {
+    en: "Are you sure you want to delete this item?",
+    te: "మీరు ఖచ్చితంగా ఈ ఫైల్‌ను తొలగించాలనుకుంటున్నారా?",
+  },
+  library: {
+    en: "Media Library",
+    te: "మీడియా లైబ్రరీ",
+  },
+  searchMedia: {
+    en: "Search media...",
+    te: "శోధించండి...",
+  },
+  filterByType: {
+    en: "Filter by Type",
+    te: "రకం ద్వారా ఫిల్టర్ చేయండి",
+  },
+  filterByStatus: {
+    en: "Filter by Status",
+    te: "స్థితి ద్వారా ఫిల్టర్ చేయండి",
+  },
+  itemsCount: {
+    en: "items",
+    te: "ఫైళ్లు",
+  },
+  assignAlbum: {
+    en: "Assign Album",
+    te: "ఆల్బమ్‌కు చేర్చండి",
+  },
+  newAlbum: {
+    en: "New Album",
+    te: "కొత్త ఆల్బమ్",
+  },
+  statusReady: {
+    en: "Ready",
+    te: "సిద్ధంగా ఉంది",
+  },
+  statusProcessing: {
+    en: "Processing",
+    te: "ప్రాసెస్ అవుతోంది",
+  },
+  statusFailed: {
+    en: "Needs Attention",
+    te: "పరిశీలన అవసరం",
+  },
+  speed: {
+    en: "Speed",
+    te: "వేగం",
+  },
+  remainingTime: {
+    en: "Remaining",
+    te: "మిగిలిన సమయం",
+  },
 } as const satisfies Record<string, BilingualText>;
 
 export type StringKey = keyof typeof STRINGS;

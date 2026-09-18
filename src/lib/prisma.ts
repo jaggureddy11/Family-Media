@@ -1,4 +1,5 @@
 import { PrismaClient, Role } from "@prisma/client";
+import { SAMPLE_MEDIA } from "./sample-media";
 
 // Global singleton for PrismaClient
 const globalForPrisma = globalThis as unknown as {
@@ -43,6 +44,31 @@ class InMemoryDb {
       highContrast: false,
       createdAt: new Date(),
       updatedAt: new Date(),
+    });
+
+    // Seed initial library with 30 realistic items
+    SAMPLE_MEDIA.forEach((item, index) => {
+      this.mediaItems.push({
+        id: `media_${index + 1}`,
+        type: item.type,
+        status: "READY",
+        title_en: item.title_en,
+        title_te: item.title_te,
+        titleEn: item.titleEn,
+        titleTe: item.titleTe,
+        year: item.year,
+        durationSeconds: item.durationSeconds,
+        durationSec: item.durationSec,
+        sizeBytes: item.sizeBytes,
+        checksumSha256: item.checksumSha256,
+        mimeType: item.mimeType,
+        originalKey: item.originalKey,
+        storageKey: item.storageKey,
+        posterKey: item.posterKey || null,
+        thumbKey: item.thumbKey || null,
+        createdAt: new Date(Date.now() - (30 - index) * 3600000),
+        updatedAt: new Date(),
+      });
     });
   }
 
@@ -172,6 +198,129 @@ class InMemoryDb {
           Object.assign(link, data);
         }
         return link;
+      },
+    };
+  }
+
+  get mediaItem() {
+    return {
+      create: async ({ data }: any) => {
+        const id = `media_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+        const item = {
+          id,
+          ...data,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+        this.mediaItems.push(item);
+        return item;
+      },
+      findMany: async ({ where, orderBy, take }: any = {}) => {
+        let results = [...this.mediaItems];
+        if (where) {
+          if (where.type) results = results.filter((m) => m.type === where.type);
+          if (where.status) results = results.filter((m) => m.status === where.status);
+          if (where.checksumSha256) results = results.filter((m) => m.checksumSha256 === where.checksumSha256);
+          if (where.OR) {
+            results = results.filter((m) =>
+              where.OR.some((cond: any) => {
+                const q = (cond.title_en?.contains || cond.title_te?.contains || cond.originalKey?.contains || "").toLowerCase();
+                return (
+                  m.title_en?.toLowerCase().includes(q) ||
+                  m.title_te?.toLowerCase().includes(q) ||
+                  m.titleEn?.toLowerCase().includes(q) ||
+                  m.titleTe?.toLowerCase().includes(q) ||
+                  m.originalName?.toLowerCase().includes(q)
+                );
+              })
+            );
+          }
+        }
+        if (orderBy?.createdAt === "desc") {
+          results.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+        }
+        if (take) {
+          results = results.slice(0, take);
+        }
+        return results;
+      },
+      findUnique: async ({ where }: any) => {
+        if (where.id) return this.mediaItems.find((m) => m.id === where.id) || null;
+        if (where.originalKey) return this.mediaItems.find((m) => m.originalKey === where.originalKey) || null;
+        if (where.storageKey) return this.mediaItems.find((m) => m.storageKey === where.storageKey || m.originalKey === where.storageKey) || null;
+        return null;
+      },
+      findFirst: async ({ where }: any) => {
+        if (where.checksumSha256) {
+          return this.mediaItems.find((m) => m.checksumSha256 === where.checksumSha256) || null;
+        }
+        if (where.checksum) {
+          return this.mediaItems.find((m) => m.checksum === where.checksum || m.checksumSha256 === where.checksum) || null;
+        }
+        if (where.originalName) {
+          return this.mediaItems.find((m) => m.originalName === where.originalName) || null;
+        }
+        return this.mediaItems[0] || null;
+      },
+      update: async ({ where, data }: any) => {
+        const item = this.mediaItems.find((m) => m.id === where.id);
+        if (item) {
+          Object.assign(item, data);
+          item.updatedAt = new Date();
+        }
+        return item;
+      },
+      delete: async ({ where }: any) => {
+        const idx = this.mediaItems.findIndex((m) => m.id === where.id);
+        if (idx !== -1) {
+          const [removed] = this.mediaItems.splice(idx, 1);
+          return removed;
+        }
+        return null;
+      },
+      upsert: async ({ where, create, update }: any) => {
+        const existing = this.mediaItems.find(
+          (m) =>
+            (where.id && m.id === where.id) ||
+            (where.originalKey && m.originalKey === where.originalKey) ||
+            (where.storageKey && (m.storageKey === where.storageKey || m.originalKey === where.storageKey))
+        );
+        if (existing) {
+          Object.assign(existing, update);
+          return existing;
+        }
+        const id = `media_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+        const newItem = {
+          id,
+          ...create,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+        this.mediaItems.push(newItem);
+        return newItem;
+      },
+    };
+  }
+
+  get album() {
+    return {
+      findMany: async () => [...this.albums],
+      create: async ({ data }: any) => {
+        const id = `album_${Date.now()}`;
+        const alb = { id, ...data, createdAt: new Date() };
+        this.albums.push(alb);
+        return alb;
+      },
+    };
+  }
+
+  get albumItem() {
+    return {
+      upsert: async ({ create }: any) => {
+        const id = `album_item_${Date.now()}`;
+        const item = { id, ...create, createdAt: new Date() };
+        this.albumItems.push(item);
+        return item;
       },
     };
   }

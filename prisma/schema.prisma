@@ -91,7 +91,7 @@ model MediaItem {
   checksumSha256     String
   mimeType           String
 
-  originalKey        String       // originals/{type}/{yyyy}/{mediaId}/{filename}
+  originalKey        String       @unique // originals/{type}/{yyyy}/{mediaId}/{filename}
   posterKey          String?      // posters/{mediaId}.jpg (extracted in admin browser)
   thumbKey           String?      // thumbs/{mediaId}.webp (resized in admin browser)
   subtitleKey        String?      // subtitles/{mediaId}.vtt (sidecar WebVTT)
