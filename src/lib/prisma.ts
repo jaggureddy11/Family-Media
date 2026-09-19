@@ -103,6 +103,45 @@ class InMemoryDb {
         this.users.push(user);
         return user;
       },
+      upsert: async ({ where, create, update }: any) => {
+        const existing = this.users.find(
+          (u) =>
+            (where.id && u.id === where.id) ||
+            (where.email && u.email === where.email)
+        );
+        if (existing) {
+          Object.assign(existing, update, { updatedAt: new Date() });
+          return existing;
+        }
+        const id = where.id || `user-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`;
+        const user = {
+          id,
+          email: create.email || null,
+          name_en: create.name_en,
+          name_te: create.name_te,
+          role: create.role || Role.FAMILY,
+          textSize: create.textSize || "EXTRA_LARGE",
+          highContrast: create.highContrast || false,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+        this.users.push(user);
+        return user;
+      },
+      update: async ({ where, data }: any) => {
+        const user = this.users.find((u) => u.id === where.id || (where.email && u.email === where.email));
+        if (user) {
+          Object.assign(user, data, { updatedAt: new Date() });
+        }
+        return user;
+      },
+      deleteMany: async ({ where }: any = {}) => {
+        const before = this.users.length;
+        if (where?.role) {
+          this.users = this.users.filter((u) => u.role !== where.role);
+        }
+        return { count: before - this.users.length };
+      },
     };
   }
 
@@ -628,6 +667,36 @@ class InMemoryDb {
       },
     };
   }
+
+  rateLimitAttempts: any[] = [];
+  get rateLimitAttempt() {
+    return {
+      deleteMany: async ({ where }: any) => {
+        const before = this.rateLimitAttempts.length;
+        if (where?.createdAt?.lt) {
+          this.rateLimitAttempts = this.rateLimitAttempts.filter(
+            (r) => new Date(r.createdAt).getTime() >= new Date(where.createdAt.lt).getTime()
+          );
+        }
+        return { count: before - this.rateLimitAttempts.length };
+      },
+      count: async ({ where }: any) => {
+        let list = [...this.rateLimitAttempts];
+        if (where?.key) list = list.filter((r) => r.key === where.key);
+        if (where?.createdAt?.gte) {
+          list = list.filter(
+            (r) => new Date(r.createdAt).getTime() >= new Date(where.createdAt.gte).getTime()
+          );
+        }
+        return list.length;
+      },
+      create: async ({ data }: any) => {
+        const item = { id: `rla_${Date.now()}_${Math.random()}`, ...data, createdAt: new Date() };
+        this.rateLimitAttempts.push(item);
+        return item;
+      },
+    };
+  }
 }
 
 // In production (NODE_ENV=production or on Vercel), in-memory Prisma is strictly disabled at runtime
@@ -635,8 +704,13 @@ const isProduction = process.env.NODE_ENV === "production" || process.env.VERCEL
 const isBuildPhase =
   process.env.NEXT_PHASE === "phase-production-build" ||
   process.env.npm_lifecycle_event === "build";
+const isTestEnv =
+  process.env.NODE_ENV === "test" ||
+  process.env.TEST_MODE === "true" ||
+  process.env.VITEST === "true" ||
+  process.env.USE_MOCK_DB === "true";
 
-if (isProduction && !isBuildPhase) {
+if (isProduction && !isBuildPhase && !isTestEnv) {
   if (
     !process.env.DATABASE_URL ||
     process.env.DATABASE_URL.includes("localhost:5432") ||
@@ -648,11 +722,11 @@ if (isProduction && !isBuildPhase) {
   }
 }
 
-// Use real PrismaClient if DATABASE_URL is present and not explicitly mocked
+// Use real PrismaClient if DATABASE_URL is present and not in test environment
 const hasRealDatabaseUrl =
   process.env.DATABASE_URL &&
   !process.env.DATABASE_URL.includes("localhost:5432") &&
-  process.env.USE_MOCK_DB !== "true";
+  !isTestEnv;
 
 let prismaInstance: any;
 

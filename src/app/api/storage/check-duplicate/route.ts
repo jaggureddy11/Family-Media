@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
 
     const whereClause: any = {};
     if (checksum) {
-      whereClause.checksum = checksum;
+      whereClause.checksumSha256 = checksum;
     } else if (filename) {
       whereClause.originalName = filename;
     }
@@ -26,8 +26,8 @@ export async function POST(request: NextRequest) {
       where: whereClause,
       select: {
         id: true,
-        titleEn: true,
-        titleTe: true,
+        title_en: true,
+        title_te: true,
         year: true,
         type: true,
         createdAt: true,

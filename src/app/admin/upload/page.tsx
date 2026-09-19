@@ -179,7 +179,25 @@ export default function AdminUploadPage() {
     );
   };
 
+  const abortControllersRef = useRef<Map<string, AbortController>>(new Map());
+
+  const pauseUpload = (id: string) => {
+    const controller = abortControllersRef.current.get(id);
+    if (controller) {
+      controller.abort();
+      abortControllersRef.current.delete(id);
+    }
+    updateQueueItem(id, { status: "paused" });
+    if (activeUploadId === id) {
+      setActiveUploadId(null);
+    }
+  };
+
   const removeItem = (id: string) => {
+    pauseUpload(id);
+    try {
+      localStorage.removeItem(`kutumbam_multipart_${id}`);
+    } catch {}
     setQueue((prev) => prev.filter((item) => item.id !== id));
   };
 
@@ -187,101 +205,167 @@ export default function AdminUploadPage() {
     if (item.handbrakeRequired) return;
 
     setActiveUploadId(item.id);
-    updateQueueItem(item.id, { status: "uploading", progress: 5 });
+    updateQueueItem(item.id, { status: "uploading", progress: item.progress || 5, errorMessage: undefined });
+
+    const controller = new AbortController();
+    abortControllersRef.current.set(item.id, controller);
 
     try {
       const yearFolder = item.year ? item.year.toString() : new Date().getFullYear().toString();
       const mediaId = `media_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
       const safeFilename = encodeURIComponent(item.name.replace(/\s+/g, "_"));
-      const storageKey = `originals/${item.type}/${yearFolder}/${mediaId}/${safeFilename}`;
+      const storageKey = item.storageKey || `originals/${item.type}/${yearFolder}/${mediaId}/${safeFilename}`;
 
       let posterKey: string | undefined;
       let thumbKey: string | undefined;
 
-      const uploadBlobHelper = async (key: string, blob: Blob, ct: string) => {
-        const uploadRes = await fetch(`/api/admin/upload?key=${encodeURIComponent(key)}`, {
+      // Direct PUT helper for small blobs (poster / thumbnail)
+      const directPutBlob = async (key: string, blob: Blob, ct: string) => {
+        const presignRes = await fetch("/api/storage/presigned-url", {
           method: "POST",
-          headers: { "Content-Type": ct, "x-storage-key": key },
-          body: blob,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ key, contentType: ct, action: "put" }),
+          signal: controller.signal,
         });
-        if (!uploadRes.ok) {
-          throw new Error(`Upload failed with status ${uploadRes.status}`);
+        if (!presignRes.ok) {
+          throw new Error(`Failed to generate upload URL: ${presignRes.status}`);
+        }
+        const { uploadUrl } = await presignRes.json();
+        const putRes = await fetch(uploadUrl, {
+          method: "PUT",
+          headers: { "Content-Type": ct },
+          body: blob,
+          signal: controller.signal,
+        });
+        if (!putRes.ok) {
+          throw new Error(`Direct storage upload failed with status ${putRes.status}`);
         }
       };
 
-      // 1. Upload Poster if extracted
+      // 1. Upload Poster directly if extracted
       if (item.posterBlob) {
         posterKey = `posters/${mediaId}.jpg`;
-        await uploadBlobHelper(posterKey, item.posterBlob, "image/jpeg");
+        await directPutBlob(posterKey, item.posterBlob, "image/jpeg");
       }
 
-      // 2. Upload Thumbnail if resized
+      // 2. Upload Thumbnail directly if resized
       if (item.thumbBlob) {
         thumbKey = `thumbs/${mediaId}.webp`;
-        await uploadBlobHelper(thumbKey, item.thumbBlob, "image/webp");
+        await directPutBlob(thumbKey, item.thumbBlob, "image/webp");
       }
 
-      // 3. Upload Original File (Direct Presigned / Multipart / Fallback)
-      updateQueueItem(item.id, { progress: 25 });
-
+      // 3. Upload Original File Directly (Presigned Single PUT or Multipart)
       const CHUNK_SIZE = 10 * 1024 * 1024; // 10MB chunks
+
       if (item.file.size > CHUNK_SIZE) {
-        // Multipart upload
+        // Multipart Upload with Resume Support
+        const storageKeyPrefix = `kutumbam_multipart_${item.id}`;
+        let uploadId = item.uploadId;
+        let completedParts: Array<{ partNumber: number; etag: string }> = [];
+
         try {
+          const cached = localStorage.getItem(storageKeyPrefix);
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            if (parsed.uploadId && parsed.storageKey === storageKey) {
+              uploadId = parsed.uploadId;
+              completedParts = parsed.parts || [];
+            }
+          }
+        } catch {}
+
+        if (!uploadId) {
           const createRes = await fetch("/api/storage/multipart/create", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ key: storageKey, contentType: item.file.type }),
+            signal: controller.signal,
           });
-          const { uploadId } = await createRes.json();
+          if (!createRes.ok) {
+            throw new Error(`Failed to initialize multipart upload: ${createRes.status}`);
+          }
+          const createData = await createRes.json();
+          uploadId = createData.uploadId;
+          updateQueueItem(item.id, { uploadId, storageKey });
+        }
 
-          const totalParts = Math.ceil(item.file.size / CHUNK_SIZE);
-          const completedParts: Array<{ partNumber: number; etag: string }> = [];
+        const totalParts = Math.ceil(item.file.size / CHUNK_SIZE);
+        const completedPartNumbers = new Set(completedParts.map((p) => p.partNumber));
 
-          for (let partNumber = 1; partNumber <= totalParts; partNumber++) {
-            const start = (partNumber - 1) * CHUNK_SIZE;
-            const end = Math.min(start + CHUNK_SIZE, item.file.size);
-            const chunk = item.file.slice(start, end);
-
-            const signRes = await fetch("/api/storage/multipart/sign-part", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ key: storageKey, uploadId, partNumber }),
-            });
-            const { url } = await signRes.json();
-
-            const uploadChunkRes = await fetch(url, {
-              method: "PUT",
-              body: chunk,
-            });
-
-            const etag = uploadChunkRes.headers.get("ETag") || `etag_${partNumber}`;
-            completedParts.push({ partNumber, etag: etag.replace(/"/g, "") });
-
-            const partProgress = Math.round(25 + (partNumber / totalParts) * 65);
-            updateQueueItem(item.id, {
-              progress: partProgress,
-              uploadedBytes: end,
-            });
+        for (let partNumber = 1; partNumber <= totalParts; partNumber++) {
+          if (controller.signal.aborted) {
+            return;
           }
 
-          // Complete multipart
-          await fetch("/api/storage/multipart/complete", {
+          if (completedPartNumbers.has(partNumber)) {
+            continue;
+          }
+
+          const start = (partNumber - 1) * CHUNK_SIZE;
+          const end = Math.min(start + CHUNK_SIZE, item.file.size);
+          const chunk = item.file.slice(start, end);
+
+          const signRes = await fetch("/api/storage/multipart/sign-part", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ key: storageKey, uploadId, parts: completedParts }),
+            body: JSON.stringify({ key: storageKey, uploadId, partNumber }),
+            signal: controller.signal,
           });
-        } catch {
-          // If direct multipart failed, upload via fallback proxy
-          await uploadBlobHelper(storageKey, item.file, item.file.type || "application/octet-stream");
+          if (!signRes.ok) {
+            throw new Error(`Failed to sign part ${partNumber}: ${signRes.status}`);
+          }
+          const { url } = await signRes.json();
+
+          const uploadChunkRes = await fetch(url, {
+            method: "PUT",
+            body: chunk,
+            signal: controller.signal,
+          });
+          if (!uploadChunkRes.ok) {
+            throw new Error(`Direct part ${partNumber} upload failed: ${uploadChunkRes.status}`);
+          }
+
+          const rawEtag = uploadChunkRes.headers.get("ETag") || `part_${partNumber}`;
+          const etag = rawEtag.replace(/"/g, "");
+          completedParts.push({ partNumber, etag });
+          completedParts.sort((a, b) => a.partNumber - b.partNumber);
+
+          try {
+            localStorage.setItem(
+              storageKeyPrefix,
+              JSON.stringify({ uploadId, storageKey, parts: completedParts })
+            );
+          } catch {}
+
+          const partProgress = Math.round((completedParts.length / totalParts) * 90);
+          updateQueueItem(item.id, {
+            progress: Math.max(10, partProgress),
+            uploadedBytes: completedParts.length * CHUNK_SIZE,
+          });
         }
+
+        // Complete multipart upload directly in S3
+        const completeRes = await fetch("/api/storage/multipart/complete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ key: storageKey, uploadId, parts: completedParts }),
+          signal: controller.signal,
+        });
+        if (!completeRes.ok) {
+          throw new Error(`Failed to finalize multipart upload: ${completeRes.status}`);
+        }
+
+        try {
+          localStorage.removeItem(storageKeyPrefix);
+        } catch {}
       } else {
-        await uploadBlobHelper(storageKey, item.file, item.file.type || "application/octet-stream");
-        updateQueueItem(item.id, { progress: 90 });
+        // Single direct PUT upload
+        await directPutBlob(storageKey, item.file, item.file.type || "application/octet-stream");
+        updateQueueItem(item.id, { progress: 95 });
       }
 
-      // 4. Create MediaItem in Postgres database with status READY
-      await fetch("/api/admin/media", {
+      // 4. Record MediaItem metadata in database
+      const dbRes = await fetch("/api/admin/media", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -300,7 +384,12 @@ export default function AdminUploadPage() {
           thumbKey,
           checksum: item.checksum,
         }),
+        signal: controller.signal,
       });
+
+      if (!dbRes.ok) {
+        throw new Error(`Failed to save media metadata in database: ${dbRes.status}`);
+      }
 
       updateQueueItem(item.id, {
         status: "completed",
@@ -308,13 +397,19 @@ export default function AdminUploadPage() {
         uploadedBytes: item.size,
       });
       setActiveUploadId(null);
+      abortControllersRef.current.delete(item.id);
     } catch (err: any) {
+      if (err.name === "AbortError" || controller.signal.aborted) {
+        // Paused intentionally
+        return;
+      }
       console.error("Upload failed:", err);
       updateQueueItem(item.id, {
         status: "failed",
         errorMessage: err.message || "Upload failed. Check storage credentials.",
       });
       setActiveUploadId(null);
+      abortControllersRef.current.delete(item.id);
     }
   };
 
@@ -532,6 +627,23 @@ export default function AdminUploadPage() {
                           variant="accent"
                           onClick={() => startUpload(item)}
                           disabled={activeUploadId !== null}
+                        />
+                      )}
+                      {item.status === "uploading" && (
+                        <BigButton
+                          k="pause"
+                          variant="secondary"
+                          icon={<Pause className="w-6 h-6" />}
+                          onClick={() => pauseUpload(item.id)}
+                        />
+                      )}
+                      {item.status === "paused" && (
+                        <BigButton
+                          k="resume"
+                          variant="accent"
+                          icon={<Play className="w-6 h-6" />}
+                          onClick={() => startUpload(item)}
+                          disabled={activeUploadId !== null && activeUploadId !== item.id}
                         />
                       )}
                       {item.status === "failed" && (

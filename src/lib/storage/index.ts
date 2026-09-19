@@ -54,7 +54,9 @@ export function getStorageProvider(): StorageProvider {
     process.env.AWS_S3_FORCE_PATH_STYLE;
   const forcePathStyle = forcePathStyleEnv !== undefined ? forcePathStyleEnv === "true" || forcePathStyleEnv === "1" : true;
 
-  if (accessKeyId && secretAccessKey && (accountId || hasRealEndpoint)) {
+  if (process.env.TEST_MODE === "true" && !isProduction) {
+    storageInstance = new MockStorageProvider();
+  } else if (accessKeyId && secretAccessKey && (accountId || hasRealEndpoint)) {
     storageInstance = new S3StorageProvider({
       accountId,
       accessKeyId,

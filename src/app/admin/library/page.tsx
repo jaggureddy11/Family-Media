@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import { PageShell } from "@/components/PageShell";
 import { Bi } from "@/components/Bi";
 import { BigButton } from "@/components/BigButton";
@@ -18,6 +19,7 @@ import {
   FolderPlus,
   RefreshCw,
   Plus,
+  Play,
 } from "lucide-react";
 
 interface MediaItem {
@@ -349,6 +351,15 @@ export default function AdminLibraryPage() {
                         </>
                       ) : (
                         <>
+                          {(item.type === "MOVIE" || item.type === "FAMILY_VIDEO") && (
+                            <Link
+                              href={`/watch/${item.id}`}
+                              className="min-h-[56px] px-5 bg-[var(--color-primary-yellow)] hover:bg-yellow-400 text-black font-bold rounded-xl flex items-center gap-2 border-2 border-yellow-300"
+                            >
+                              <Play className="w-6 h-6 fill-current" />
+                              <Bi k="play" />
+                            </Link>
+                          )}
                           <button
                             type="button"
                             onClick={() => startEdit(item)}

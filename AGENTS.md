@@ -88,6 +88,11 @@ If a design decision is a trade-off between power and simplicity, ALWAYS choose 
     - Read all secrets solely from `.env` or environment variables at runtime.
     - All documentation, examples, and scripts must strictly use generic placeholders (e.g. `<YOUR_KEY_ID>`, `<YOUR_APPLICATION_KEY>`, `<YOUR_BUCKET_NAME>`).
     - Every commit must pass the pre-commit secret scan (`npm run secret-scan`).
+15. **NO SERVER-SIDE FILE PROXYING (BROWSER <-> STORAGE DIRECT)**:
+    - No server-side file proxying: file bytes go browser <-> storage only.
+    - Media files (MP4, photos, documents) must never pass through or be buffered on the Next.js server (Vercel payload limit is ~4.5 MB).
+    - Client browsers upload and download directly via S3/B2/R2 presigned URLs (single PUT for small files, multipart for large files).
+    - API routes are strictly limited to auth, issuing presigned URLs, and lightweight JSON metadata.
 
 
 <!-- BEGIN:nextjs-agent-rules -->
