@@ -745,4 +745,32 @@ if (hasRealDatabaseUrl && !isBuildPhase) {
 }
 
 export const prisma = prismaInstance;
+
+/**
+ * Returns safe metadata about the active database connection for admin dashboard.
+ * NEVER leaks credentials or connection strings.
+ */
+export function getDatabaseInfo(): { isReal: boolean; label: string } {
+  const isMock =
+    !process.env.DATABASE_URL ||
+    process.env.DATABASE_URL.includes("localhost:5432") ||
+    process.env.USE_MOCK_DB === "true" ||
+    isTestEnv;
+
+  let label = "Database: MOCK";
+  let isReal = false;
+
+  if (!isMock && hasRealDatabaseUrl) {
+    isReal = true;
+    if (process.env.DATABASE_URL?.includes("neon.tech")) {
+      label = "Database: Neon (real)";
+    } else {
+      label = "Database: PostgreSQL (real)";
+    }
+  }
+
+  return { isReal, label };
+}
+
 export default prisma;
+

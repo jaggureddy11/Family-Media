@@ -54,7 +54,22 @@ export function getStorageProvider(): StorageProvider {
     process.env.AWS_S3_FORCE_PATH_STYLE;
   const forcePathStyle = forcePathStyleEnv !== undefined ? forcePathStyleEnv === "true" || forcePathStyleEnv === "1" : true;
 
-  if (process.env.TEST_MODE === "true" && !isProduction) {
+  if (process.env.REAL_STORAGE_TEST === "true") {
+    if (!accessKeyId || !secretAccessKey || (!accountId && !hasRealEndpoint)) {
+      throw new Error(
+        "REAL_STORAGE_TEST=true requires valid real S3/B2/R2 storage credentials in .env. MockStorageProvider is strictly rejected."
+      );
+    }
+    storageInstance = new S3StorageProvider({
+      accountId,
+      accessKeyId,
+      secretAccessKey,
+      bucketName,
+      endpoint,
+      region,
+      forcePathStyle,
+    });
+  } else if (process.env.TEST_MODE === "true" && !isProduction) {
     storageInstance = new MockStorageProvider();
   } else if (accessKeyId && secretAccessKey && (accountId || hasRealEndpoint)) {
     storageInstance = new S3StorageProvider({
@@ -75,4 +90,44 @@ export function getStorageProvider(): StorageProvider {
   }
 
   return storageInstance;
+}
+
+/**
+ * Returns safe metadata about the active storage provider for admin dashboard.
+ * NEVER leaks secret keys or access credentials.
+ */
+export function getStorageInfo(): {
+  isReal: boolean;
+  label: string;
+  providerName: string;
+} {
+  const provider = getStorageProvider();
+  const isMock =
+    provider.name === "MockStorage" ||
+    provider.constructor.name === "MockStorageProvider";
+  const endpoint =
+    process.env.STORAGE_ENDPOINT ||
+    process.env.AWS_ENDPOINT_URL_S3 ||
+    process.env.R2_ENDPOINT ||
+    "";
+
+  let label = "Storage: MOCK (not saving anywhere)";
+  let isReal = false;
+
+  if (!isMock) {
+    isReal = true;
+    if (endpoint.includes("backblazeb2.com")) {
+      label = "Storage: Backblaze B2 (real)";
+    } else if (endpoint.includes("r2.cloudflarestorage.com")) {
+      label = "Storage: Cloudflare R2 (real)";
+    } else {
+      label = "Storage: S3 (real)";
+    }
+  }
+
+  return {
+    isReal,
+    label,
+    providerName: provider.constructor.name,
+  };
 }

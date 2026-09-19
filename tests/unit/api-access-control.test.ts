@@ -168,6 +168,15 @@ describe("API Access Control & Immediate Session Revocation Tests", () => {
       const res = await createFolderAdmin(req);
       expect(res.status).toBe(200);
     });
+    it("allows access to /api/admin/system-status returning safe metadata", async () => {
+      const { GET: getSystemStatus } = await import("@/app/api/admin/system-status/route");
+      const req = createReq("http://localhost:3000/api/admin/system-status", adminCookie);
+      const res = await getSystemStatus(req);
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.storage).toBeDefined();
+      expect(data.database).toBeDefined();
+    });
   });
 
   describe("4. Immediate Revocation Check against Database", () => {

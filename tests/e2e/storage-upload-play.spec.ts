@@ -8,69 +8,91 @@ test.describe("E2E Direct Storage Upload & Large File Video Playback with CSP / 
   test.beforeEach(async ({ context, page }) => {
     await setupSessionCookie(context, Role.ADMIN, "admin-1");
 
-    // Intercept direct storage PUT requests to simulate high-performance S3/B2 endpoint
-    await page.route((url) => {
-      const href = url.href;
-      return (
-        href.includes("mock-upload") ||
-        href.includes("backblazeb2.com") ||
-        href.includes("s3.")
-      );
-    }, async (route) => {
-      if (route.request().method() === "PUT") {
-        await route.fulfill({
-          status: 200,
-          headers: {
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Expose-Headers": "ETag, Content-Range, Accept-Ranges, Content-Length",
-            "ETag": `"part-etag-${Date.now()}"`,
-          },
-          body: "",
-        });
-        return;
-      }
-      await route.continue();
-    });
+    const isRealStorageTest = process.env.REAL_STORAGE_TEST === "true";
 
-    // Intercept video playback requests to stream sample MP4 with byte-ranges
-    await page.route((url) => url.href.includes("mock-media") || url.href.includes("originals/"), async (route) => {
-      const fs = await import("fs");
-      const samplePath = path.resolve(process.cwd(), "tests/fixtures/sample.mp4");
-      if (fs.existsSync(samplePath)) {
-        const fileBuffer = fs.readFileSync(samplePath);
-        const rangeHeader = route.request().headers()["range"];
-        if (rangeHeader && rangeHeader.startsWith("bytes=")) {
-          const parts = rangeHeader.replace(/bytes=/, "").split("-");
-          const start = parseInt(parts[0], 10) || 0;
-          const end = parts[1] ? parseInt(parts[1], 10) : fileBuffer.length - 1;
-          const chunk = fileBuffer.subarray(start, end + 1);
+    if (isRealStorageTest) {
+      const { getStorageProvider } = await import("../../src/lib/storage");
+      const provider = getStorageProvider();
+      if (
+        provider.constructor.name === "MockStorageProvider" ||
+        provider.name === "MockStorage"
+      ) {
+        throw new Error(
+          "REAL_STORAGE_TEST=true requires real S3/B2 storage provider, but received MockStorageProvider!"
+        );
+      }
+      console.log(
+        `[Real Storage Test Active] Provider: ${provider.constructor.name}, Endpoint: ${
+          process.env.STORAGE_ENDPOINT ||
+          process.env.AWS_ENDPOINT_URL_S3 ||
+          process.env.R2_ENDPOINT
+        }`
+      );
+    } else {
+      // In CI / standard test mode, intercept direct storage PUT requests
+      await page.route((url) => {
+        const href = url.href;
+        return (
+          href.includes("mock-upload") ||
+          href.includes("backblazeb2.com") ||
+          href.includes("s3.")
+        );
+      }, async (route) => {
+        if (route.request().method() === "PUT") {
           await route.fulfill({
-            status: 206,
+            status: 200,
             headers: {
-              "Content-Range": `bytes ${start}-${end}/${fileBuffer.length}`,
-              "Accept-Ranges": "bytes",
-              "Content-Length": chunk.length.toString(),
-              "Content-Type": "video/mp4",
               "Access-Control-Allow-Origin": "*",
+              "Access-Control-Expose-Headers": "ETag, Content-Range, Accept-Ranges, Content-Length",
+              "ETag": `"part-etag-${Date.now()}"`,
             },
-            body: chunk,
+            body: "",
           });
           return;
         }
-        await route.fulfill({
-          status: 200,
-          headers: {
-            "Content-Type": "video/mp4",
-            "Content-Length": fileBuffer.length.toString(),
-            "Accept-Ranges": "bytes",
-            "Access-Control-Allow-Origin": "*",
-          },
-          body: fileBuffer,
-        });
-        return;
-      }
-      await route.continue();
-    });
+        await route.continue();
+      });
+
+      // Intercept video playback requests to stream sample MP4 with byte-ranges
+      await page.route((url) => url.href.includes("mock-media") || url.href.includes("originals/"), async (route) => {
+        const fs = await import("fs");
+        const samplePath = path.resolve(process.cwd(), "tests/fixtures/sample.mp4");
+        if (fs.existsSync(samplePath)) {
+          const fileBuffer = fs.readFileSync(samplePath);
+          const rangeHeader = route.request().headers()["range"];
+          if (rangeHeader && rangeHeader.startsWith("bytes=")) {
+            const parts = rangeHeader.replace(/bytes=/, "").split("-");
+            const start = parseInt(parts[0], 10) || 0;
+            const end = parts[1] ? parseInt(parts[1], 10) : fileBuffer.length - 1;
+            const chunk = fileBuffer.subarray(start, end + 1);
+            await route.fulfill({
+              status: 206,
+              headers: {
+                "Content-Range": `bytes ${start}-${end}/${fileBuffer.length}`,
+                "Accept-Ranges": "bytes",
+                "Content-Length": chunk.length.toString(),
+                "Content-Type": "video/mp4",
+                "Access-Control-Allow-Origin": "*",
+              },
+              body: chunk,
+            });
+            return;
+          }
+          await route.fulfill({
+            status: 200,
+            headers: {
+              "Content-Type": "video/mp4",
+              "Content-Length": fileBuffer.length.toString(),
+              "Accept-Ranges": "bytes",
+              "Access-Control-Allow-Origin": "*",
+            },
+            body: fileBuffer,
+          });
+          return;
+        }
+        await route.continue();
+      });
+    }
   });
 
   test("uploads a real ~300MB MP4 via direct multipart with pause/resume, verifies in library, plays & seeks with zero CSP/CORS errors", async ({ page }) => {
@@ -195,7 +217,25 @@ test.describe("E2E Direct Storage Upload & Large File Video Playback with CSP / 
     }
     expect(consoleErrors).toEqual([]);
 
-    // 11. Cleanup test media from database
+    // 11. If running against real storage, list bucket and confirm objects created, then delete
+    if (process.env.REAL_STORAGE_TEST === "true") {
+      const { getStorageProvider } = await import("../../src/lib/storage");
+      const provider = getStorageProvider();
+      const objects = await provider.list("originals/");
+      console.log(`[Real Storage Test] Found ${objects.length} objects with prefix originals/`);
+      for (const obj of objects) {
+        if (obj.key.includes("sample")) {
+          console.log(`[Real Storage Test] Deleting uploaded test object: ${obj.key}`);
+          await provider.delete(obj.key);
+        }
+      }
+      const remaining = await provider.list("originals/");
+      const sampleRemaining = remaining.filter((r) => r.key.includes("sample"));
+      expect(sampleRemaining.length).toBe(0);
+      console.log("[Real Storage Test] Verified all test objects were deleted from B2/S3 bucket.");
+    }
+
+    // 12. Cleanup test media from database
     try {
       await prisma.mediaItem.deleteMany({
         where: {
