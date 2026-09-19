@@ -14,6 +14,10 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorKey, setErrorKey] = useState<StringKey | null>(null);
 
+  React.useEffect(() => {
+    router.replace("/");
+  }, [router]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!passphrase.trim() || isLoading) return;

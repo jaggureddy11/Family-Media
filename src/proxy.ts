@@ -99,47 +99,66 @@ async function verifySignedCookie(cookieValue: string): Promise<{ role: string }
   return null;
 }
 
+/**
+ * Creates default Mom session cookie for Edge runtime.
+ */
+async function createDefaultMomCookie(): Promise<string> {
+  const rawToken = "mom_default_session";
+  const role = "ADMIN";
+  const expStr = String(Date.now() + 365 * 24 * 60 * 60 * 1000);
+  const payload = `${rawToken}.${role}.${expStr}`;
+
+  try {
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      "raw",
+      encoder.encode(SESSION_SECRET),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"]
+    );
+
+    const signatureBuffer = await crypto.subtle.sign("HMAC", key, encoder.encode(payload));
+    const sig = Array.from(new Uint8Array(signatureBuffer))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+
+    return `${payload}.${sig}`;
+  } catch {
+    return `${payload}.fallback`;
+  }
+}
+
 export default async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // 1. Determine if current path is public
-  const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
+  // 1. If accessing /login, redirect directly to Mom's home page
+  if (pathname === "/login") {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
 
   // 2. Read session cookie
   const sessionCookie = request.cookies.get(SESSION_COOKIE_NAME)?.value;
   const session = sessionCookie ? await verifySignedCookie(sessionCookie) : null;
 
-  // 3. Gate /styleguide behind admin in production
-  if (pathname.startsWith("/styleguide") && isProduction) {
-    if (session?.role !== "ADMIN") {
-      const loginUrl = new URL("/login", request.url);
-      loginUrl.searchParams.set("from", pathname);
-      return NextResponse.redirect(loginUrl);
-    }
-  }
-
-  // 4. If accessing /login and already logged in, redirect to home or admin
-  if (pathname === "/login" && session) {
-    const redirectUrl = session.role === "ADMIN" ? "/admin/family" : "/";
-    return NextResponse.redirect(new URL(redirectUrl, request.url));
-  }
-
-  // 5. If path is protected and no valid session, redirect to /login
-  if (!isPublic && !session) {
-    const loginUrl = new URL("/login", request.url);
-    if (pathname !== "/") {
-      loginUrl.searchParams.set("from", pathname);
-    }
-    return NextResponse.redirect(loginUrl);
-  }
-
-  // 6. If accessing /admin/* and role is not ADMIN, redirect to /login
-  if (pathname.startsWith("/admin") && session?.role !== "ADMIN") {
-    return NextResponse.redirect(new URL("/login", request.url));
-  }
-
-  // 7. Proceed and apply strict privacy & security headers to every response
+  // 3. Proceed and apply strict privacy & security headers to every response
   const response = NextResponse.next();
+
+  // If no session cookie exists, issue default Mom session cookie
+  if (!sessionCookie || !session) {
+    try {
+      const defaultCookieValue = await createDefaultMomCookie();
+      response.cookies.set(SESSION_COOKIE_NAME, defaultCookieValue, {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: "lax",
+        path: "/",
+        maxAge: 365 * 24 * 60 * 60,
+      });
+    } catch {
+      // ignore
+    }
+  }
 
   // Privacy: Never index in search engines
   response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive, nosnippet");

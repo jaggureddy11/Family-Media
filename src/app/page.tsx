@@ -2,10 +2,11 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { Film, Image as ImageIcon, Video, Folder, Play } from "lucide-react";
+import { Film, Image as ImageIcon, Video, Folder, Play, UploadCloud } from "lucide-react";
 import { PageShell } from "@/components/PageShell";
 import { Bi } from "@/components/Bi";
 import { BigTile } from "@/components/BigTile";
+import { BigButton } from "@/components/BigButton";
 
 interface ContinueItem {
   id: string;
@@ -53,7 +54,19 @@ export default function HomePage() {
   }, []);
 
   return (
-    <PageShell showBack={false} showHome={false}>
+    <PageShell
+      showBack={false}
+      showHome={false}
+      topLeftAction={
+        <BigButton
+          k="uploadPhotosMovies"
+          icon={<UploadCloud className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-300" />}
+          href="/admin/upload"
+          variant="secondary"
+          className="!min-h-[56px] sm:!min-h-[80px] !px-3 sm:!px-6 !py-1 !text-[var(--text-min)] font-bold border-4 border-yellow-400/80 bg-yellow-400/10 hover:bg-yellow-400 hover:text-black shrink"
+        />
+      }
+    >
       <div className="flex flex-col gap-10 sm:gap-14 py-4 sm:py-6">
         {/* Warm Bilingual Greeting from Mom's Profile */}
         <div className="flex flex-col sm:flex-row items-start sm:items-baseline justify-between gap-4 border-b-4 border-[var(--border-subtle)] pb-6">

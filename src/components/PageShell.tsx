@@ -27,6 +27,8 @@ export interface PageShellProps {
   backHref?: string;
   /** Optional header right-side custom action */
   headerAction?: React.ReactNode;
+  /** Optional header left-side custom action (e.g. on Home page) */
+  topLeftAction?: React.ReactNode;
   /** Page main content */
   children: React.ReactNode;
   /** Optional flag indicating an admin-only view */
@@ -54,6 +56,7 @@ export const PageShell: React.FC<PageShellProps> = ({
   showHome = true,
   backHref,
   headerAction,
+  topLeftAction,
   adminOnly,
   navItems,
   children,
@@ -157,9 +160,11 @@ export const PageShell: React.FC<PageShellProps> = ({
     <div className="min-h-screen flex flex-col bg-[var(--bg-main)] text-[var(--text-primary)]">
       {/* Top Header Bar */}
       <header className="sticky top-0 z-30 bg-[var(--bg-main)]/95 backdrop-blur-sm border-b-4 border-[var(--border-subtle)] px-2 sm:px-8 py-2.5 sm:py-5">
-        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-1.5 sm:gap-4">
-          {/* Navigation Controls: Back & Home */}
+        <div className="max-w-7xl mx-auto flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 sm:gap-4">
+          {/* Navigation Controls: Back & Home or Top-Left Action */}
           <div className="flex items-center gap-1 sm:gap-4">
+            {topLeftAction}
+
             {showBack && (
               <BigButton
                 k="back"

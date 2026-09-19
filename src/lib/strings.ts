@@ -325,6 +325,10 @@ export const STRINGS = {
     en: "Upload Media",
     te: "మీడియాను అప్‌లోడ్ చేయండి",
   },
+  uploadPhotosMovies: {
+    en: "Upload Photos/Movies",
+    te: "ఫోటోలు/సినిమాలు అప్‌లోడ్",
+  },
   dragAndDrop: {
     en: "Drag and drop files here, or tap to choose files",
     te: "ఫైళ్లను ఇక్కడ డ్రాగ్ చేయండి, లేదా ఎంచుకోవడానికి నొక్కండి",
