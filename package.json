@@ -13,7 +13,8 @@
     "test:e2e": "playwright test",
     "hash-passphrase": "npx tsx scripts/hash-passphrase.ts",
     "secret-scan": "npx tsx scripts/secret-scan.ts",
-    "smoke": "npx tsx scripts/smoke-test.ts"
+    "smoke": "npx tsx scripts/smoke-test.ts",
+    "upload-movie": "npx tsx scripts/upload-movie.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1135.0",
