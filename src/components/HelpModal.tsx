@@ -12,7 +12,7 @@ interface HelpModalProps {
 
 export function HelpModal({ isOpen, onClose }: HelpModalProps) {
   const [contactName, setContactName] = useState(
-    process.env.NEXT_PUBLIC_HELP_CONTACT_NAME || "Family Admin"
+    process.env.NEXT_PUBLIC_HELP_CONTACT_NAME || "Jaggu"
   );
   const [phoneNumber, setPhoneNumber] = useState(
     process.env.NEXT_PUBLIC_HELP_PHONE_NUMBER || "+919110300509"

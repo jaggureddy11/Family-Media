@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const envPhone = process.env.NEXT_PUBLIC_HELP_PHONE_NUMBER || "+919110300509";
   const envWhatsapp = process.env.NEXT_PUBLIC_HELP_WHATSAPP_NUMBER || "+919110300509";
-  const envName = process.env.NEXT_PUBLIC_HELP_CONTACT_NAME || "Family Admin";
+  const envName = process.env.NEXT_PUBLIC_HELP_CONTACT_NAME || "Jaggu";
 
   try {
     const settings = await prisma.systemSetting.findMany();

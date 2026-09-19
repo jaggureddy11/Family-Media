@@ -70,7 +70,7 @@ export const PageShell: React.FC<PageShellProps> = ({
   const effectiveTitleKey = titleKey || titleStringKey;
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [helpInfo, setHelpInfo] = useState({
-    contactName: process.env.NEXT_PUBLIC_HELP_CONTACT_NAME || "Family Admin",
+    contactName: process.env.NEXT_PUBLIC_HELP_CONTACT_NAME || "Jaggu",
     phoneNumber: process.env.NEXT_PUBLIC_HELP_PHONE_NUMBER || "+919110300509",
     whatsappNumber: process.env.NEXT_PUBLIC_HELP_WHATSAPP_NUMBER || "+919110300509",
   });
