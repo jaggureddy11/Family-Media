@@ -21,6 +21,29 @@ describe("API Access Control & Immediate Session Revocation Tests", () => {
   let revokedDeviceId: string;
 
   beforeEach(async () => {
+    // 0. Ensure users exist
+    await prisma.user.upsert({
+      where: { id: "admin-1" },
+      update: {},
+      create: {
+        id: "admin-1",
+        name_en: "Admin",
+        name_te: "అడ్మిన్",
+        role: Role.ADMIN,
+      },
+    });
+
+    await prisma.user.upsert({
+      where: { id: "mom-1" },
+      update: {},
+      create: {
+        id: "mom-1",
+        name_en: "Amma",
+        name_te: "అమ్మ",
+        role: Role.FAMILY,
+      },
+    });
+
     // 1. Setup Admin session
     const adminSession = await createDeviceSession({
       userId: "admin-1",

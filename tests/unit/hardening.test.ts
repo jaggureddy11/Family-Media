@@ -28,16 +28,21 @@ describe("Hardening Pass & Security Guardrails", () => {
   });
 
   describe("1. Production Fail-Fast (Database & Storage)", () => {
-    it("fails fast in production when R2 credentials are missing", () => {
+    it("fails fast in production when storage credentials are missing", () => {
       process.env.NODE_ENV = "production";
       delete process.env.STORAGE_ACCESS_KEY_ID;
       delete process.env.R2_ACCESS_KEY_ID;
+      delete process.env.AWS_ACCESS_KEY_ID;
       delete process.env.STORAGE_SECRET_ACCESS_KEY;
       delete process.env.R2_SECRET_ACCESS_KEY;
+      delete process.env.AWS_SECRET_ACCESS_KEY;
       delete process.env.STORAGE_ENDPOINT;
       delete process.env.R2_ENDPOINT;
+      delete process.env.AWS_ENDPOINT_URL_S3;
+      delete process.env.R2_ACCOUNT_ID;
+      delete process.env.STORAGE_ACCOUNT_ID;
 
-      expect(() => getStorageProvider()).toThrow(/Cloudflare R2 storage credentials are required in production/);
+      expect(() => getStorageProvider()).toThrow(/storage credentials are required in production/i);
     });
 
     it("allows MockStorageProvider in development/test when R2 credentials are missing", () => {

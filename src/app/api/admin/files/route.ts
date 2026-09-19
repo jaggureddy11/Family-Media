@@ -50,7 +50,6 @@ export async function POST(request: NextRequest) {
         checksumSha256: "0".repeat(64),
         mimeType: "application/x-directory",
         originalKey: `folders${fullPath}.keep`,
-        storageKey: `folders${fullPath}.keep`,
       },
     });
 

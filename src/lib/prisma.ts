@@ -648,28 +648,26 @@ if (isProduction && !isBuildPhase) {
   }
 }
 
-// In development or when Neon is not reachable yet, use the InMemoryDb
-const useMock =
-  !isProduction ||
-  isBuildPhase ||
-  (process.env.USE_MOCK_DB === "true" ||
-    !process.env.DATABASE_URL ||
-    process.env.DATABASE_URL.includes("localhost:5432"));
+// Use real PrismaClient if DATABASE_URL is present and not explicitly mocked
+const hasRealDatabaseUrl =
+  process.env.DATABASE_URL &&
+  !process.env.DATABASE_URL.includes("localhost:5432") &&
+  process.env.USE_MOCK_DB !== "true";
 
 let prismaInstance: any;
 
-if (useMock) {
-  if (!globalForPrisma.mockDb) {
-    globalForPrisma.mockDb = new InMemoryDb();
-  }
-  prismaInstance = globalForPrisma.mockDb;
-} else {
+if (hasRealDatabaseUrl && !isBuildPhase) {
   prismaInstance =
     globalForPrisma.prisma ??
     new PrismaClient({
       log: process.env.NODE_ENV === "development" ? ["warn", "error"] : ["error"],
     });
   if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prismaInstance;
+} else {
+  if (!globalForPrisma.mockDb) {
+    globalForPrisma.mockDb = new InMemoryDb();
+  }
+  prismaInstance = globalForPrisma.mockDb;
 }
 
 export const prisma = prismaInstance;

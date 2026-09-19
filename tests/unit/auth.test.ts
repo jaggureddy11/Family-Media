@@ -13,6 +13,18 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
 describe("Auth & Token Security Utilities", () => {
+  beforeEach(async () => {
+    await prisma.user.upsert({
+      where: { id: "mom-1" },
+      update: {},
+      create: {
+        id: "mom-1",
+        name_en: "Amma",
+        name_te: "అమ్మ",
+        role: "FAMILY",
+      },
+    });
+  });
   it("generates 64-character random hexadecimal tokens", () => {
     const token1 = generateRandomToken(32);
     const token2 = generateRandomToken(32);

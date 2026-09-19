@@ -11,6 +11,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "hash-passphrase": "npx tsx scripts/hash-passphrase.ts",
+    "secret-scan": "npx tsx scripts/secret-scan.ts",
     "smoke": "npx tsx scripts/smoke-test.ts"
   },
   "dependencies": {

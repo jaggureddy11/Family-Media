@@ -36,6 +36,22 @@ describe("Milestone 5 Unit Tests: Photos, Timeline & Files", () => {
 
   describe("2. Custom Albums & Media Associations", () => {
     it("creates custom bilingual album and manages album items", async () => {
+      const mediaItem = await prisma.mediaItem.upsert({
+        where: { originalKey: "originals/PHOTO/2023/media_test_album_item_1/temple.jpg" },
+        update: {},
+        create: {
+          id: "media_test_album_item_1",
+          type: "PHOTO",
+          title_en: "Temple Photo",
+          title_te: "గుడి ఫోటో",
+          originalKey: "originals/PHOTO/2023/media_test_album_item_1/temple.jpg",
+          sizeBytes: BigInt(1024),
+          checksumSha256: "test-hash-photo",
+          mimeType: "image/jpeg",
+          status: "READY",
+        },
+      });
+
       const album = await prisma.album.create({
         data: {
           title_en: "Tirupati Pilgrimage 2023",
@@ -53,7 +69,7 @@ describe("Milestone 5 Unit Tests: Photos, Timeline & Files", () => {
       const item = await prisma.albumItem.create({
         data: {
           albumId: album.id,
-          mediaItemId: "media_1",
+          mediaItemId: mediaItem.id,
           sortOrder: 0,
         },
       });

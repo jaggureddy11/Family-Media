@@ -62,16 +62,25 @@ describe("StorageProvider Abstraction", () => {
     expect(await storage.exists(key)).toBe(false);
   });
 
-  it("strictly disables MockStorageProvider in production when R2 credentials are missing", () => {
+  it("strictly disables MockStorageProvider in production when storage credentials are missing", () => {
     const origNodeEnv = process.env.NODE_ENV;
     try {
       resetStorageProvider();
       process.env.NODE_ENV = "production";
       delete process.env.STORAGE_ACCESS_KEY_ID;
       delete process.env.R2_ACCESS_KEY_ID;
+      delete process.env.AWS_ACCESS_KEY_ID;
+      delete process.env.STORAGE_SECRET_ACCESS_KEY;
+      delete process.env.R2_SECRET_ACCESS_KEY;
+      delete process.env.AWS_SECRET_ACCESS_KEY;
+      delete process.env.STORAGE_ENDPOINT;
+      delete process.env.R2_ENDPOINT;
+      delete process.env.AWS_ENDPOINT_URL_S3;
+      delete process.env.R2_ACCOUNT_ID;
+      delete process.env.STORAGE_ACCOUNT_ID;
 
       expect(() => getStorageProvider()).toThrow(
-        /Cloudflare R2 storage credentials are required in production/
+        /storage credentials are required in production/i
       );
     } finally {
       process.env.NODE_ENV = origNodeEnv;

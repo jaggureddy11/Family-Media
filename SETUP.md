@@ -26,9 +26,11 @@ This guide walks you through setting up your local environment and connecting to
    - Select **"Prisma"** or **"Connection string"** from the dropdown.
    - It looks like:
      ```text
-     postgresql://username:password@ep-cool-butterfly-123456.us-east-2.aws.neon.tech/neondb?sslmode=require
+     postgresql://<USERNAME>:<PASSWORD>@<NEON_HOST>/neondb?sslmode=require
      ```
    - Click the **Copy** button.
+
+---
 
 ---
 
@@ -88,6 +90,43 @@ This guide walks you through setting up your local environment and connecting to
 
 ---
 
+## 3B. Step-by-Step Backblaze B2 Setup (Alternative S3 Provider)
+
+1. **Sign In to Backblaze**: Go to [backblaze.com/b2](https://www.backblaze.com/b2) and sign in.
+2. **Create Private Bucket**:
+   - Go to **Buckets** > **Create a Bucket**.
+   - Bucket Name: `<YOUR_BUCKET_NAME>` (e.g. `kutumbam-private-media`).
+   - Files in Bucket are: **Private** (Keep public access OFF!).
+   - Default Encryption: Enabled (optional).
+   - Object Lock: Disabled (unless desired).
+   - Click **"Create a Bucket"**.
+3. **Configure Bucket CORS**:
+   - On the Buckets page, click **Bucket Settings** or **CORS Rules** for your bucket.
+   - Set CORS rules to allow origins (`http://localhost:3000`, `https://*.vercel.app`, `https://your-domain.com`), methods (`GET`, `PUT`, `POST`, `HEAD`, `DELETE`), and expose headers (`ETag`, `Content-Range`, `Accept-Ranges`, `Content-Length`).
+4. **Create Application Key Scoped to Bucket**:
+   - Go to **Account** > **Application Keys** > **Add a New Application Key**.
+   - Name of Key: `kutumbam-app`.
+   - Allow access to Bucket(s): Select your bucket (e.g. `<YOUR_BUCKET_NAME>`).
+   - Type of Access: **Read and Write**.
+   - Allow List All Bucket Names: unchecked.
+   - Click **"Create New Key"**.
+   - Note down:
+     - **keyID** (Used as `STORAGE_ACCESS_KEY_ID`)
+     - **applicationKey** (Used as `STORAGE_SECRET_ACCESS_KEY`)
+     - **S3 Endpoint** (e.g. `https://s3.<YOUR_REGION>.backblazeb2.com`)
+     - **Region** (e.g. `us-east-005` or `us-west-004`)
+5. **Set Environment Variables**:
+   ```env
+   STORAGE_ENDPOINT="https://s3.<YOUR_REGION>.backblazeb2.com"
+   STORAGE_REGION="<YOUR_REGION>"
+   STORAGE_ACCESS_KEY_ID="<YOUR_KEY_ID>"
+   STORAGE_SECRET_ACCESS_KEY="<YOUR_APPLICATION_KEY>"
+   STORAGE_BUCKET_NAME="<YOUR_BUCKET_NAME>"
+   STORAGE_FORCE_PATH_STYLE="true"
+   ```
+
+---
+
 ## 4. Configure Environment Variables (`.env`)
 
 1. In the project root, copy `.env.example` to `.env`:
@@ -97,7 +136,7 @@ This guide walks you through setting up your local environment and connecting to
 2. Populate the environment variables:
    ```env
    # Database (Neon PostgreSQL)
-   DATABASE_URL="postgresql://username:password@ep-cool-butterfly-123456.us-east-2.aws.neon.tech/neondb?sslmode=require"
+   DATABASE_URL="postgresql://<USERNAME>:<PASSWORD>@<NEON_HOST>/neondb?sslmode=require"
 
    # Authentication
    # Plaintext is accepted in development only. Production strictly requires ADMIN_PASSPHRASE_HASH.

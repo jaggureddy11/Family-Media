@@ -48,6 +48,12 @@ export function getStorageProvider(): StorageProvider {
   // Ignore mock localhost endpoint when determining if real credentials are provided
   const hasRealEndpoint = endpoint && !endpoint.includes("localhost:9000");
 
+  const forcePathStyleEnv =
+    process.env.STORAGE_FORCE_PATH_STYLE ||
+    process.env.R2_FORCE_PATH_STYLE ||
+    process.env.AWS_S3_FORCE_PATH_STYLE;
+  const forcePathStyle = forcePathStyleEnv !== undefined ? forcePathStyleEnv === "true" || forcePathStyleEnv === "1" : true;
+
   if (accessKeyId && secretAccessKey && (accountId || hasRealEndpoint)) {
     storageInstance = new S3StorageProvider({
       accountId,
@@ -56,7 +62,7 @@ export function getStorageProvider(): StorageProvider {
       bucketName,
       endpoint,
       region,
-      forcePathStyle: true,
+      forcePathStyle,
     });
   } else if (isProduction && !isBuildPhase) {
     throw new Error(

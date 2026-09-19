@@ -83,7 +83,12 @@ If a design decision is a trade-off between power and simplicity, ALWAYS choose 
     - No low-contrast decoration. Movie/photo captions sit on solid bars underneath, not overlaid on top of images.
     - Per-profile `--text-scale` CSS variable driving Large (1.0), Extra Large (1.25, default), Huge (1.5).
     - High contrast theme option (pure black `#000000` + yellow `#FACC15` / white `#FFFFFF`).
-    - Movie titles displayed BIG under the poster because poster graphics are unreadable for low-vision users.
+14. **STRICT ZERO-LEAK CREDENTIAL SECURITY**:
+    - Never type real secrets, application keys, key IDs, passwords, or tokens into shell commands, terminal inputs, or logs.
+    - Read all secrets solely from `.env` or environment variables at runtime.
+    - All documentation, examples, and scripts must strictly use generic placeholders (e.g. `<YOUR_KEY_ID>`, `<YOUR_APPLICATION_KEY>`, `<YOUR_BUCKET_NAME>`).
+    - Every commit must pass the pre-commit secret scan (`npm run secret-scan`).
+
 
 <!-- BEGIN:nextjs-agent-rules -->
 

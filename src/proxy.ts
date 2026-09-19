@@ -18,19 +18,39 @@ const PUBLIC_PATHS = [
   "/favicon.ico",
 ];
 
-function getR2Origin(): string {
+function getStorageOrigins(): string[] {
   const endpoint =
+    process.env.STORAGE_ENDPOINT ||
     process.env.R2_ENDPOINT ||
+    process.env.AWS_ENDPOINT_URL_S3 ||
     (process.env.R2_ACCOUNT_ID
       ? `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`
       : "");
-  if (!endpoint) return "";
+
+  if (!endpoint) return [];
+
+  const origins: Set<string> = new Set();
+
   try {
     const parsed = new URL(endpoint.startsWith("http") ? endpoint : `https://${endpoint}`);
-    return `${parsed.protocol}//${parsed.host}`;
+    // 1. Direct endpoint origin (e.g. https://s3.us-east-005.backblazeb2.com)
+    origins.add(`${parsed.protocol}//${parsed.host}`);
+
+    const bucket =
+      process.env.STORAGE_BUCKET_NAME ||
+      process.env.R2_BUCKET_NAME ||
+      process.env.AWS_BUCKET_NAME;
+
+    // 2. Bucket subdomain form (e.g. https://<bucket>.s3.<region>.backblazeb2.com)
+    if (bucket) {
+      origins.add(`${parsed.protocol}//${bucket}.${parsed.host}`);
+      origins.add(`${parsed.protocol}//${bucket.toLowerCase()}.${parsed.host}`);
+    }
   } catch {
-    return "";
+    // ignore parse failure
   }
+
+  return Array.from(origins);
 }
 
 /**
@@ -124,20 +144,20 @@ export default async function proxy(request: NextRequest) {
   // Privacy: Never index in search engines
   response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive, nosnippet");
 
-  // Strict CSP: Zero third parties, zero external CDNs, only self-hosted assets + R2 origin
-  const r2Origin = getR2Origin();
-  const r2Src = r2Origin ? ` ${r2Origin}` : "";
+  // Strict CSP: Zero third parties, zero external CDNs, only self-hosted assets + Storage origins
+  const storageOrigins = getStorageOrigins();
+  const storageSrc = storageOrigins.length > 0 ? ` ${storageOrigins.join(" ")}` : "";
 
   response.headers.set(
     "Content-Security-Policy",
     [
       "default-src 'self'",
-      `img-src 'self' data: blob:${r2Src}`,
-      `media-src 'self' blob:${r2Src}`,
+      `img-src 'self' data: blob:${storageSrc}`,
+      `media-src 'self' blob:${storageSrc}`,
       "style-src 'self' 'unsafe-inline'",
       "font-src 'self'",
       "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-      `connect-src 'self'${r2Src}`,
+      `connect-src 'self'${storageSrc}`,
       "frame-ancestors 'none'",
     ].join("; ")
   );

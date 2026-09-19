@@ -198,104 +198,85 @@ export default function AdminUploadPage() {
       let posterKey: string | undefined;
       let thumbKey: string | undefined;
 
+      const uploadBlobHelper = async (key: string, blob: Blob, ct: string) => {
+        const uploadRes = await fetch(`/api/admin/upload?key=${encodeURIComponent(key)}`, {
+          method: "POST",
+          headers: { "Content-Type": ct, "x-storage-key": key },
+          body: blob,
+        });
+        if (!uploadRes.ok) {
+          throw new Error(`Upload failed with status ${uploadRes.status}`);
+        }
+      };
+
       // 1. Upload Poster if extracted
       if (item.posterBlob) {
         posterKey = `posters/${mediaId}.jpg`;
-        const presignRes = await fetch("/api/storage/presigned-url", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ key: posterKey, contentType: "image/jpeg", action: "put" }),
-        });
-        const { uploadUrl } = await presignRes.json();
-        if (uploadUrl) {
-          await fetch(uploadUrl, {
-            method: "PUT",
-            headers: { "Content-Type": "image/jpeg" },
-            body: item.posterBlob,
-          });
-        }
+        await uploadBlobHelper(posterKey, item.posterBlob, "image/jpeg");
       }
 
       // 2. Upload Thumbnail if resized
       if (item.thumbBlob) {
         thumbKey = `thumbs/${mediaId}.webp`;
-        const presignRes = await fetch("/api/storage/presigned-url", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ key: thumbKey, contentType: "image/webp", action: "put" }),
-        });
-        const { uploadUrl } = await presignRes.json();
-        if (uploadUrl) {
-          await fetch(uploadUrl, {
-            method: "PUT",
-            headers: { "Content-Type": "image/webp" },
-            body: item.thumbBlob,
-          });
-        }
+        await uploadBlobHelper(thumbKey, item.thumbBlob, "image/webp");
       }
 
-      // 3. Upload Original File (Direct Presigned / Multipart)
+      // 3. Upload Original File (Direct Presigned / Multipart / Fallback)
       updateQueueItem(item.id, { progress: 25 });
 
       const CHUNK_SIZE = 10 * 1024 * 1024; // 10MB chunks
       if (item.file.size > CHUNK_SIZE) {
         // Multipart upload
-        const createRes = await fetch("/api/storage/multipart/create", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ key: storageKey, contentType: item.file.type }),
-        });
-        const { uploadId } = await createRes.json();
-
-        const totalParts = Math.ceil(item.file.size / CHUNK_SIZE);
-        const completedParts: Array<{ partNumber: number; etag: string }> = [];
-
-        for (let partNumber = 1; partNumber <= totalParts; partNumber++) {
-          const start = (partNumber - 1) * CHUNK_SIZE;
-          const end = Math.min(start + CHUNK_SIZE, item.file.size);
-          const chunk = item.file.slice(start, end);
-
-          const signRes = await fetch("/api/storage/multipart/sign-part", {
+        try {
+          const createRes = await fetch("/api/storage/multipart/create", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ key: storageKey, uploadId, partNumber }),
+            body: JSON.stringify({ key: storageKey, contentType: item.file.type }),
           });
-          const { url } = await signRes.json();
+          const { uploadId } = await createRes.json();
 
-          const uploadChunkRes = await fetch(url, {
-            method: "PUT",
-            body: chunk,
+          const totalParts = Math.ceil(item.file.size / CHUNK_SIZE);
+          const completedParts: Array<{ partNumber: number; etag: string }> = [];
+
+          for (let partNumber = 1; partNumber <= totalParts; partNumber++) {
+            const start = (partNumber - 1) * CHUNK_SIZE;
+            const end = Math.min(start + CHUNK_SIZE, item.file.size);
+            const chunk = item.file.slice(start, end);
+
+            const signRes = await fetch("/api/storage/multipart/sign-part", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ key: storageKey, uploadId, partNumber }),
+            });
+            const { url } = await signRes.json();
+
+            const uploadChunkRes = await fetch(url, {
+              method: "PUT",
+              body: chunk,
+            });
+
+            const etag = uploadChunkRes.headers.get("ETag") || `etag_${partNumber}`;
+            completedParts.push({ partNumber, etag: etag.replace(/"/g, "") });
+
+            const partProgress = Math.round(25 + (partNumber / totalParts) * 65);
+            updateQueueItem(item.id, {
+              progress: partProgress,
+              uploadedBytes: end,
+            });
+          }
+
+          // Complete multipart
+          await fetch("/api/storage/multipart/complete", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ key: storageKey, uploadId, parts: completedParts }),
           });
-
-          const etag = uploadChunkRes.headers.get("ETag") || `etag_${partNumber}`;
-          completedParts.push({ partNumber, etag: etag.replace(/"/g, "") });
-
-          const partProgress = Math.round(25 + (partNumber / totalParts) * 65);
-          updateQueueItem(item.id, {
-            progress: partProgress,
-            uploadedBytes: end,
-          });
+        } catch {
+          // If direct multipart failed, upload via fallback proxy
+          await uploadBlobHelper(storageKey, item.file, item.file.type || "application/octet-stream");
         }
-
-        // Complete multipart
-        await fetch("/api/storage/multipart/complete", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ key: storageKey, uploadId, parts: completedParts }),
-        });
       } else {
-        // Single PUT upload
-        const presignRes = await fetch("/api/storage/presigned-url", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ key: storageKey, contentType: item.file.type, action: "put" }),
-        });
-        const { uploadUrl } = await presignRes.json();
-        await fetch(uploadUrl, {
-          method: "PUT",
-          headers: { "Content-Type": item.file.type || "application/octet-stream" },
-          body: item.file,
-        });
+        await uploadBlobHelper(storageKey, item.file, item.file.type || "application/octet-stream");
         updateQueueItem(item.id, { progress: 90 });
       }
 
