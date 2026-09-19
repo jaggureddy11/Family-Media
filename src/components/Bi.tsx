@@ -4,6 +4,8 @@ import { BilingualText, STRINGS, StringKey } from "@/lib/strings";
 export interface BiProps {
   /** A pre-defined key from the STRINGS glossary */
   k?: StringKey;
+  /** Alias for k */
+  stringKey?: StringKey;
   /** Custom bilingual text object */
   text?: BilingualText;
   /** Explicit English string (e.g. dynamic title from database) */
@@ -30,6 +32,7 @@ export interface BiProps {
  */
 export const Bi: React.FC<BiProps> = ({
   k,
+  stringKey,
   text,
   en,
   te,
@@ -41,10 +44,12 @@ export const Bi: React.FC<BiProps> = ({
   let resolvedEn = en || "";
   let resolvedTe = te || "";
 
-  if (k && STRINGS[k]) {
-    resolvedEn = STRINGS[k].en;
-    resolvedTe = STRINGS[k].te;
+  const keyToUse = k || stringKey;
+  if (keyToUse && STRINGS[keyToUse]) {
+    resolvedEn = STRINGS[keyToUse].en;
+    resolvedTe = STRINGS[keyToUse].te;
   } else if (text) {
+
     resolvedEn = text.en;
     resolvedTe = text.te;
   }

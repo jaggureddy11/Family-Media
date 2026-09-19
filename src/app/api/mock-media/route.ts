@@ -24,6 +24,11 @@ Welcome everyone to Kutumbam.
 `;
 
 export async function GET(request: NextRequest) {
+  const isProduction = process.env.NODE_ENV === "production" || process.env.VERCEL === "1";
+  if (isProduction && process.env.TEST_MODE !== "true") {
+    return new NextResponse("Not Found", { status: 404 });
+  }
+
   const { searchParams } = new URL(request.url);
   const key = searchParams.get("key") || "";
 

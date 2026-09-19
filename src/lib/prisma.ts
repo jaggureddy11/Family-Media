@@ -223,8 +223,20 @@ class InMemoryDb {
               results = results.filter((m) => where.id.in.includes(m.id));
             }
           }
-          if (where.type) results = results.filter((m) => m.type === where.type);
-          if (where.status) results = results.filter((m) => m.status === where.status);
+          if (where.type) {
+            if (typeof where.type === "string") {
+              results = results.filter((m) => m.type === where.type);
+            } else if (where.type.in && Array.isArray(where.type.in)) {
+              results = results.filter((m) => where.type.in.includes(m.type));
+            }
+          }
+          if (where.status) {
+            if (typeof where.status === "string") {
+              results = results.filter((m) => m.status === where.status);
+            } else if (where.status.in && Array.isArray(where.status.in)) {
+              results = results.filter((m) => where.status.in.includes(m.status));
+            }
+          }
           if (where.checksumSha256) results = results.filter((m) => m.checksumSha256 === where.checksumSha256);
           if (where.OR) {
             results = results.filter((m) =>
@@ -309,26 +321,134 @@ class InMemoryDb {
 
   get album() {
     return {
-      findMany: async () => [...this.albums],
+      findMany: async ({ where, include, orderBy }: any = {}) => {
+        let list = [...this.albums];
+        if (where?.isAutoYearly !== undefined) {
+          list = list.filter((a) => a.isAutoYearly === where.isAutoYearly);
+        }
+        if (where?.year) {
+          list = list.filter((a) => a.year === where.year);
+        }
+        if (orderBy?.year === "desc") {
+          list.sort((a, b) => (b.year || 0) - (a.year || 0));
+        }
+        return list.map((a) => {
+          const items = this.albumItems.filter((ai) => ai.albumId === a.id);
+          const mapped: any = { ...a };
+          if (include?.items) {
+            mapped.items = items.map((ai) => ({
+              ...ai,
+              mediaItem: this.mediaItems.find((m) => m.id === ai.mediaItemId) || null,
+            }));
+          }
+          if (include?._count) {
+            mapped._count = { items: items.length };
+          }
+          return mapped;
+        });
+      },
+      findUnique: async ({ where, include }: any) => {
+        const a = this.albums.find((alb) => alb.id === where.id);
+        if (!a) return null;
+        const items = this.albumItems.filter((ai) => ai.albumId === a.id);
+        const mapped: any = { ...a };
+        if (include?.items) {
+          mapped.items = items.map((ai) => ({
+            ...ai,
+            mediaItem: this.mediaItems.find((m) => m.id === ai.mediaItemId) || null,
+          }));
+        }
+        if (include?._count) {
+          mapped._count = { items: items.length };
+        }
+        return mapped;
+      },
       create: async ({ data }: any) => {
-        const id = `album_${Date.now()}`;
-        const alb = { id, ...data, createdAt: new Date() };
+        const id = `album_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+        const alb = {
+          id,
+          title_en: data.title_en,
+          title_te: data.title_te,
+          coverKey: data.coverKey || null,
+          isAutoYearly: data.isAutoYearly || false,
+          year: data.year || null,
+          sortOrder: data.sortOrder || 0,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
         this.albums.push(alb);
         return alb;
+      },
+      update: async ({ where, data }: any) => {
+        const alb = this.albums.find((a) => a.id === where.id);
+        if (alb) {
+          Object.assign(alb, data, { updatedAt: new Date() });
+        }
+        return alb;
+      },
+      delete: async ({ where }: any) => {
+        const idx = this.albums.findIndex((a) => a.id === where.id);
+        if (idx !== -1) {
+          const [removed] = this.albums.splice(idx, 1);
+          this.albumItems = this.albumItems.filter((ai) => ai.albumId !== where.id);
+          return removed;
+        }
+        return null;
       },
     };
   }
 
   get albumItem() {
     return {
-      upsert: async ({ create }: any) => {
-        const id = `album_item_${Date.now()}`;
-        const item = { id, ...create, createdAt: new Date() };
+      findMany: async ({ where }: any = {}) => {
+        let list = [...this.albumItems];
+        if (where?.albumId) list = list.filter((ai) => ai.albumId === where.albumId);
+        if (where?.mediaItemId) list = list.filter((ai) => ai.mediaItemId === where.mediaItemId);
+        return list;
+      },
+      create: async ({ data }: any) => {
+        const id = `ai_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+        const item = { id, ...data, addedAt: new Date() };
         this.albumItems.push(item);
         return item;
       },
+      upsert: async ({ where, create }: any) => {
+        const existing = this.albumItems.find(
+          (ai) =>
+            ai.albumId === where?.albumId_mediaItemId?.albumId &&
+            ai.mediaItemId === where?.albumId_mediaItemId?.mediaItemId
+        );
+        if (existing) return existing;
+        const id = `ai_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+        const item = { id, ...create, addedAt: new Date() };
+        this.albumItems.push(item);
+        return item;
+      },
+      delete: async ({ where }: any) => {
+        const idx = this.albumItems.findIndex(
+          (ai) =>
+            ai.albumId === where?.albumId_mediaItemId?.albumId &&
+            ai.mediaItemId === where?.albumId_mediaItemId?.mediaItemId
+        );
+        if (idx !== -1) {
+          const [removed] = this.albumItems.splice(idx, 1);
+          return removed;
+        }
+        return null;
+      },
+      deleteMany: async ({ where }: any = {}) => {
+        const before = this.albumItems.length;
+        if (where?.albumId) {
+          this.albumItems = this.albumItems.filter((ai) => ai.albumId !== where.albumId);
+        }
+        if (where?.mediaItemId) {
+          this.albumItems = this.albumItems.filter((ai) => ai.mediaItemId !== where.mediaItemId);
+        }
+        return { count: before - this.albumItems.length };
+      },
     };
   }
+
 
   rateLimitAttempts: any[] = [];
   get rateLimitAttempt() {

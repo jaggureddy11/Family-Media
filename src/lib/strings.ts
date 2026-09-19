@@ -521,6 +521,282 @@ export const STRINGS = {
     en: "Playback Error",
     te: "ప్లేబ్యాక్ లోపం",
   },
+
+  // --- Photos, Timeline, Slideshow & Fullscreen Viewer ---
+  jumpToYear: {
+    en: "Jump to Year",
+    te: "సంవత్సరానికి వెళ్ళండి",
+  },
+  startSlideshow: {
+    en: "Slideshow",
+    te: "స్లైడ్షో",
+  },
+  pauseSlideshow: {
+    en: "Pause Slideshow",
+    te: "స్లైడ్షో పాజ్",
+  },
+  resumeSlideshow: {
+    en: "Resume Slideshow",
+    te: "స్లైడ్షో కొనసాగించండి",
+  },
+  slideIntervalNote: {
+    en: "Advances every 6 seconds",
+    te: "ప్రతి 6 సెకన్లకు మారుతుంది",
+  },
+  favorited: {
+    en: "Favorited",
+    te: "ఇష్టమైనదిగా చేర్చబడింది",
+  },
+  removeFromFavorites: {
+    en: "Remove from Favorites",
+    te: "ఇష్టమైన వాటి నుండి తీసివేయండి",
+  },
+  addToFavorites: {
+    en: "Add to Favorites",
+    te: "ఇష్టమైన వాటికి చేర్చండి",
+  },
+  closeViewer: {
+    en: "Close Viewer",
+    te: "మూసివేయండి",
+  },
+  photoCount: {
+    en: "photos",
+    te: "ఫోటోలు",
+  },
+  videoCount: {
+    en: "videos",
+    te: "వీడియోలు",
+  },
+  noFavoritesEmpty: {
+    en: "No favorites yet. Tap the heart on any photo or movie to save it here.",
+    te: "ఇంకా ఇష్టమైనవి లేవు. ఫోటో లేదా సినిమాపై ఉన్న గుండె గుర్తును తాకండి.",
+  },
+  yearlyAlbums: {
+    en: "Yearly Albums",
+    te: "సంవత్సరాల ఆల్బమ్‌లు",
+  },
+  customAlbums: {
+    en: "Family Albums",
+    te: "కుటుంబ ఆల్బమ్‌లు",
+  },
+  noAlbumsEmpty: {
+    en: "No albums created yet.",
+    te: "ఇంకా ఆల్బమ్‌లు సృష్టించబడలేదు.",
+  },
+  albumName: {
+    en: "Album Name",
+    te: "ఆల్బమ్ పేరు",
+  },
+  albumNameEn: {
+    en: "Album Name (English)",
+    te: "ఆల్బమ్ పేరు (ఇంగ్లీష్)",
+  },
+  albumNameTe: {
+    en: "Album Name (Telugu)",
+    te: "ఆల్బమ్ పేరు (తెలుగు)",
+  },
+  createAlbum: {
+    en: "Create Album",
+    te: "కొత్త ఆల్బమ్ సృష్టించండి",
+  },
+  setAsCover: {
+    en: "Set as Cover",
+    te: "కవర్ చిత్రంగా పెట్టండి",
+  },
+  removeFromAlbum: {
+    en: "Remove from Album",
+    te: "ఆల్బమ్ నుండి తొలగించండి",
+  },
+  adjustDate: {
+    en: "Adjust Date",
+    te: "తేదీని మార్చండి",
+  },
+  viewAllPhotos: {
+    en: "View all photos",
+    te: "అన్ని ఫోటోలను చూడండి",
+  },
+
+  // --- Family Videos ---
+  watchVideo: {
+    en: "Watch Video",
+    te: "వీడియో చూడండి",
+  },
+  duration: {
+    en: "Duration",
+    te: "నిడివి",
+  },
+  allFamilyVideos: {
+    en: "All Family Videos",
+    te: "అన్ని కుటుంబ వీడియోలు",
+  },
+
+  // --- Other Files, PDF Reader & Audio Player ---
+  filesAndDocuments: {
+    en: "Files & Documents",
+    te: "ఫైళ్లు & పత్రాలు",
+  },
+  folders: {
+    en: "Folders",
+    te: "ఫోల్డర్లు",
+  },
+  documents: {
+    en: "Documents",
+    te: "పత్రాలు",
+  },
+  audio: {
+    en: "Audio & Songs",
+    te: "ఆడియో & పాటలు",
+  },
+  pdfDocument: {
+    en: "PDF Document",
+    te: "పిడిఎఫ్ పత్రం",
+  },
+  audioFile: {
+    en: "Audio File",
+    te: "ఆడియో ఫైల్",
+  },
+  imageFile: {
+    en: "Image File",
+    te: "చిత్రం",
+  },
+  unknownFile: {
+    en: "File",
+    te: "ఫైల్",
+  },
+  newFolder: {
+    en: "New Folder",
+    te: "కొత్త ఫోల్డర్",
+  },
+  folderName: {
+    en: "Folder Name",
+    te: "ఫోల్డర్ పేరు",
+  },
+  createFolder: {
+    en: "Create Folder",
+    te: "ఫోల్డర్ సృష్టించండి",
+  },
+  renameFolder: {
+    en: "Rename Folder",
+    te: "పేరు మార్చండి",
+  },
+  deleteFolder: {
+    en: "Delete Folder",
+    te: "ఫోల్డర్ తొలగించండి",
+  },
+  rootFolder: {
+    en: "Main Folder",
+    te: "ప్రధాన ఫోల్డర్",
+  },
+  previousPage: {
+    en: "Previous Page",
+    te: "మునుపటి పేజీ",
+  },
+  nextPage: {
+    en: "Next Page",
+    te: "తదుపరి పేజీ",
+  },
+  page: {
+    en: "Page",
+    te: "పేజీ",
+  },
+  of: {
+    en: "of",
+    te: "లో",
+  },
+  zoomIn: {
+    en: "Zoom In",
+    te: "పెద్దది చేయండి",
+  },
+  zoomOut: {
+    en: "Zoom Out",
+    te: "చిన్నది చేయండి",
+  },
+  openDocument: {
+    en: "Open Document",
+    te: "పత్రం తెరవండి",
+  },
+  playAudio: {
+    en: "Play Audio",
+    te: "ఆడియో వినండి",
+  },
+  downloadFile: {
+    en: "Download File",
+    te: "ఫైల్ డౌన్‌లోడ్ చేయండి",
+  },
+  fileSize: {
+    en: "File size",
+    te: "ఫైల్ పరిమాణం",
+  },
 } as const satisfies Record<string, BilingualText>;
 
 export type StringKey = keyof typeof STRINGS;
+
+export const TELUGU_MONTHS = [
+  "జనవరి",
+  "ఫిబ్రవరి",
+  "మార్చి",
+  "ఏప్రిల్",
+  "మే",
+  "జూన్",
+  "జూలై",
+  "ఆగస్టు",
+  "సెప్టెంబర్",
+  "అక్టోబర్",
+  "నవంబర్",
+  "డిసెంబర్",
+];
+
+export const ENGLISH_MONTHS = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
+/**
+ * Formats date into friendly bilingual text:
+ * English: "12 March 2019"
+ * Telugu: "2019 మార్చి 12"
+ */
+export function formatBilingualDate(input: Date | string | number): BilingualText {
+  const d = new Date(input);
+  if (isNaN(d.getTime())) {
+    return { en: "Date not set", te: "తేదీ లేదు" };
+  }
+
+  const day = d.getDate();
+  const monthIdx = d.getMonth();
+  const year = d.getFullYear();
+
+  const enMonth = ENGLISH_MONTHS[monthIdx] || "";
+  const teMonth = TELUGU_MONTHS[monthIdx] || "";
+
+  return {
+    en: `${day} ${enMonth} ${year}`,
+    te: `${year} ${teMonth} ${day}`,
+  };
+}
+
+/**
+ * Formats Month + Year header into friendly bilingual text:
+ * English: "March 2019"
+ * Telugu: "2019 మార్చి"
+ */
+export function formatBilingualMonthYear(year: number, monthIndex: number): BilingualText {
+  const enMonth = ENGLISH_MONTHS[monthIndex] || "";
+  const teMonth = TELUGU_MONTHS[monthIndex] || "";
+
+  return {
+    en: `${enMonth} ${year}`,
+    te: `${year} ${teMonth}`,
+  };
+}
+

@@ -9,11 +9,15 @@ import { Role } from "@prisma/client";
 
 /**
  * Test session provisioning endpoint for automated testing in non-production environments.
- * Strictly disabled in production.
+ * Strictly returns 404 unless in test/development and TEST_MODE is explicitly enabled.
  */
 export async function POST(request: NextRequest) {
-  if (process.env.NODE_ENV === "production" || process.env.VERCEL === "1") {
-    return NextResponse.json({ error: "Disabled in production" }, { status: 403 });
+  const isAllowed =
+    (process.env.NODE_ENV === "test" || process.env.NODE_ENV === "development") &&
+    process.env.TEST_MODE === "true";
+
+  if (!isAllowed) {
+    return new NextResponse("Not Found", { status: 404 });
   }
 
   try {
@@ -71,3 +75,46 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export async function GET(request: NextRequest) {
+  const isAllowed =
+    (process.env.NODE_ENV === "test" || process.env.NODE_ENV === "development") &&
+    process.env.TEST_MODE === "true";
+
+  if (!isAllowed) {
+    return new NextResponse("Not Found", { status: 404 });
+  }
+
+  const { searchParams } = new URL(request.url);
+  const redirectPath = searchParams.get("redirect") || "/";
+
+  const user = (await prisma.user.findFirst({ where: { role: Role.FAMILY } })) ||
+    (await prisma.user.create({
+      data: {
+        id: "mom-1",
+        name_en: "Amma",
+        name_te: "అమ్మా",
+        role: Role.FAMILY,
+        textSize: "EXTRA_LARGE",
+        highContrast: false,
+      },
+    }));
+
+  const { rawToken, expiresAt } = await createDeviceSession({
+    userId: user.id,
+    deviceName: `${user.name_en}'s Browser Session`,
+  });
+
+  const signedValue = createSignedCookieValue(rawToken, user.role, expiresAt);
+  const response = NextResponse.redirect(new URL(redirectPath, request.url));
+  response.cookies.set(SESSION_COOKIE_NAME, signedValue, {
+    httpOnly: true,
+    secure: false,
+    sameSite: "lax",
+    path: "/",
+    expires: expiresAt,
+  });
+
+  return response;
+}
+
