@@ -89,6 +89,10 @@ export const STRINGS = {
     en: "Fullscreen",
     te: "పూర్తి స్క్రీన్",
   },
+  exitFullscreen: {
+    en: "Exit Fullscreen",
+    te: "స్క్రీన్ సాధారణ పరిమాణం",
+  },
   audioAndSubtitles: {
     en: "Audio & Subtitles",
     te: "భాష & ఉపశీర్షికలు",

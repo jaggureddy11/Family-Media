@@ -132,3 +132,11 @@ video::cue {
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
 }
 
+/* Ensure no native browser media controls or overlays appear on custom player */
+video::-webkit-media-controls,
+video::-webkit-media-controls-enclosure,
+video::-webkit-media-controls-panel {
+  display: none !important;
+  -webkit-appearance: none;
+}
+

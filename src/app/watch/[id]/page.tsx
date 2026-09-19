@@ -9,7 +9,6 @@ import {
   RotateCw,
   Maximize,
   Minimize,
-  Subtitles,
   ArrowLeft,
   Home,
   Film,
@@ -70,7 +69,6 @@ export default function WatchPlayerPage() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [subtitlesActive, setSubtitlesActive] = useState(true);
   const [showControls, setShowControls] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isEnded, setIsEnded] = useState(false);
@@ -302,35 +300,74 @@ export default function WatchPlayerPage() {
     resetControlsTimer();
   };
 
-  const toggleSubtitles = () => {
-    if (!videoRef.current) return;
-    const newActive = !subtitlesActive;
-    setSubtitlesActive(newActive);
-
-    const tracks = videoRef.current.textTracks;
-    if (tracks && tracks.length > 0) {
-      for (let i = 0; i < tracks.length; i++) {
-        tracks[i].mode = newActive ? "showing" : "hidden";
-      }
-    }
-    resetControlsTimer();
-  };
-
+  // 9b. Enhanced Fullscreen logic
   const toggleFullscreen = () => {
-    if (!containerRef.current && !videoRef.current) return;
+    const doc: any = document;
+    const isCurrentlyFullscreen = Boolean(
+      doc.fullscreenElement ||
+      doc.webkitFullscreenElement ||
+      doc.mozFullScreenElement ||
+      doc.msFullscreenElement
+    );
 
-    if (document.fullscreenElement) {
-      document.exitFullscreen().catch(() => {});
+    if (isCurrentlyFullscreen) {
+      if (doc.exitFullscreen) {
+        doc.exitFullscreen().catch(() => {});
+      } else if (doc.webkitExitFullscreen) {
+        doc.webkitExitFullscreen();
+      }
       setIsFullscreen(false);
-    } else if (containerRef.current?.requestFullscreen) {
-      containerRef.current.requestFullscreen().catch(() => {});
-      setIsFullscreen(true);
-    } else if ((videoRef.current as any)?.webkitEnterFullscreen) {
-      // iOS Safari fallback
-      (videoRef.current as any).webkitEnterFullscreen();
+      try {
+        (screen.orientation as any)?.unlock?.();
+      } catch {}
+    } else {
+      const container: any = containerRef.current;
+      const video: any = videoRef.current;
+
+      if (container?.requestFullscreen) {
+        container.requestFullscreen().catch(() => {});
+        setIsFullscreen(true);
+      } else if (container?.webkitRequestFullscreen) {
+        container.webkitRequestFullscreen();
+        setIsFullscreen(true);
+      } else if (video?.webkitEnterFullscreen) {
+        // iOS Safari video element fullscreen fallback
+        video.webkitEnterFullscreen();
+      }
+
+      // Automatically attempt landscape lock on mobile devices for theater experience
+      try {
+        (screen.orientation as any)?.lock?.("landscape").catch(() => {});
+      } catch {}
     }
     resetControlsTimer();
   };
+
+  // Synchronize fullscreen state on any browser change or gesture
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      const doc: any = document;
+      const isFs = Boolean(
+        doc.fullscreenElement ||
+        doc.webkitFullscreenElement ||
+        doc.mozFullScreenElement ||
+        doc.msFullscreenElement
+      );
+      setIsFullscreen(isFs);
+      if (!isFs) {
+        try {
+          (screen.orientation as any)?.unlock?.();
+        } catch {}
+      }
+    };
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      document.removeEventListener("webkitfullscreenchange", handleFullscreenChange);
+    };
+  }, []);
 
   // 10. D-Pad and Keyboard Remote Controls
   useEffect(() => {
@@ -457,6 +494,9 @@ export default function WatchPlayerPage() {
           poster={mediaData.urls.posterUrl || undefined}
           playsInline
           controls={false}
+          disablePictureInPicture
+          // @ts-expect-error controlsList non-standard attribute
+          controlsList="nodownload nofullscreen noremoteplayback"
           crossOrigin="anonymous"
           onLoadedMetadata={handleLoadedMetadata}
           onTimeUpdate={() => {
@@ -468,17 +508,7 @@ export default function WatchPlayerPage() {
           onError={handleVideoError}
           className="w-full h-full object-contain cursor-pointer"
           onClick={togglePlay}
-        >
-          {mediaData.urls.subtitleUrl && (
-            <track
-              kind="subtitles"
-              src={mediaData.urls.subtitleUrl}
-              srcLang="te"
-              label="Telugu · తెలుగు"
-              default={subtitlesActive}
-            />
-          )}
-        </video>
+        />
       )}
 
       {/* Controls Overlay (Auto-hides after 3s when playing) */}
@@ -578,41 +608,27 @@ export default function WatchPlayerPage() {
                 <span className="text-zinc-300">{formatTime(duration)}</span>
               </div>
 
-              {/* Action Controls: Subtitles Toggle & Fullscreen */}
+              {/* Action Controls: Fullscreen */}
               <div className="flex items-center gap-2 sm:gap-4">
-                {/* Subtitles Toggle Button */}
-                <button
-                  type="button"
-                  onClick={toggleSubtitles}
-                  className={`kutumbam-focus min-h-[48px] sm:min-h-[64px] px-4 sm:px-6 rounded-xl sm:rounded-2xl border-4 font-bold flex items-center gap-2 sm:gap-3 transition-all flex-1 sm:flex-initial justify-center ${
-                    subtitlesActive
-                      ? "bg-yellow-400 text-black border-white shadow-lg"
-                      : "bg-zinc-800 text-zinc-300 border-zinc-600 hover:border-zinc-400"
-                  }`}
-                  data-nav-item="true"
-                  aria-label="Toggle subtitles · ఉపశీర్షికలు"
-                >
-                  <Subtitles className="w-5 h-5 sm:w-8 sm:h-8 shrink-0" />
-                  <span className="text-xs sm:text-[var(--text-btn)]">
-                    <Bi k={subtitlesActive ? "subtitlesOn" : "subtitlesOff"} />
-                  </span>
-                </button>
-
                 {/* Fullscreen Button */}
                 <button
                   type="button"
                   onClick={toggleFullscreen}
-                  className="kutumbam-focus min-h-[48px] sm:min-h-[64px] px-4 sm:px-6 rounded-xl sm:rounded-2xl bg-zinc-800 hover:bg-zinc-700 border-4 border-zinc-500 text-white font-bold flex items-center gap-2 sm:gap-3 flex-1 sm:flex-initial justify-center"
+                  className={`kutumbam-focus min-h-[52px] sm:min-h-[64px] px-5 sm:px-8 rounded-xl sm:rounded-2xl border-4 font-bold flex items-center gap-2 sm:gap-3 transition-all flex-1 sm:flex-initial justify-center shadow-lg active:scale-95 ${
+                    isFullscreen
+                      ? "bg-yellow-400 text-black border-white"
+                      : "bg-zinc-800 hover:bg-zinc-700 border-zinc-500 text-white"
+                  }`}
                   data-nav-item="true"
-                  aria-label="Fullscreen · పూర్తి స్క్రీన్"
+                  aria-label={isFullscreen ? "Exit Fullscreen · స్క్రీన్ సాధారణ పరిమాణం" : "Fullscreen · పూర్తి స్క్రీన్"}
                 >
                   {isFullscreen ? (
                     <Minimize className="w-5 h-5 sm:w-8 sm:h-8 shrink-0" />
                   ) : (
                     <Maximize className="w-5 h-5 sm:w-8 sm:h-8 shrink-0" />
                   )}
-                  <span className="text-xs sm:text-[var(--text-btn)]">
-                    <Bi k="fullscreen" />
+                  <span className="text-sm sm:text-[var(--text-btn)]">
+                    <Bi k={isFullscreen ? "exitFullscreen" : "fullscreen"} />
                   </span>
                 </button>
               </div>
