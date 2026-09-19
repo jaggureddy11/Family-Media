@@ -44,3 +44,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .neon
+
+# media test fixtures
+*.mp4
+*.mkv
+*.mov
+tests/fixtures/*.mp4
