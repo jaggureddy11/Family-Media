@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Home, HelpCircle, Phone, MessageCircle, X } from "lucide-react";
+import { ArrowLeft, Home, HelpCircle, Phone, MessageCircle, X, UploadCloud } from "lucide-react";
 import { BigButton } from "./BigButton";
 import { Bi } from "./Bi";
 import { useSpatialNavigation } from "@/hooks/useSpatialNavigation";
@@ -23,6 +23,8 @@ export interface PageShellProps {
   showBack?: boolean;
   /** Whether to show the Home button (default true) */
   showHome?: boolean;
+  /** Whether to show small Upload button in top corner (default false) */
+  showUpload?: boolean;
   /** Custom back URL (if not router.back()) */
   backHref?: string;
   /** Optional header right-side custom action */
@@ -54,6 +56,7 @@ export const PageShell: React.FC<PageShellProps> = ({
   titleStringKey,
   showBack = true,
   showHome = true,
+  showUpload = false,
   backHref,
   headerAction,
   topLeftAction,
@@ -138,10 +141,11 @@ export const PageShell: React.FC<PageShellProps> = ({
         setShowHelpModal(false);
       } else if (backHref) {
         router.push(backHref);
-      } else {
+      } else if (window.location.pathname !== "/") {
         router.back();
       }
     },
+    onSelect: () => {},
   });
 
   const handleBackClick = () => {
@@ -159,58 +163,72 @@ export const PageShell: React.FC<PageShellProps> = ({
   return (
     <div className="min-h-screen flex flex-col bg-[var(--bg-main)] text-[var(--text-primary)]">
       {/* Top Header Bar */}
-      <header className="sticky top-0 z-30 bg-[var(--bg-main)]/95 backdrop-blur-sm border-b-4 border-[var(--border-subtle)] px-2 sm:px-8 py-2.5 sm:py-5">
-        <div className="max-w-7xl mx-auto flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 sm:gap-4">
-          {/* Navigation Controls: Back & Home or Top-Left Action */}
-          <div className="flex items-center gap-1 sm:gap-4">
+      <header className="sticky top-0 z-30 bg-[var(--bg-main)]/95 backdrop-blur-sm border-b-4 border-[var(--border-subtle)] px-2.5 sm:px-8 py-2 sm:py-3">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-1.5 sm:gap-3 w-full">
+          {/* Navigation Controls: Back & Home or Top-Left Brand/Action */}
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             {topLeftAction}
 
             {showBack && (
               <BigButton
                 k="back"
-                icon={<ArrowLeft className="w-6 h-6 sm:w-8 sm:h-8" />}
+                size="small"
+                icon={<ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />}
                 onClick={handleBackClick}
                 variant="secondary"
-                className="!min-h-[56px] sm:!min-h-[80px] !px-2 sm:!px-6 !py-1 !text-[var(--text-min)] shrink"
+                className="!min-h-[38px] sm:!min-h-[44px] !px-2.5 sm:!px-4 !py-1 !text-xs sm:!text-sm rounded-xl shrink whitespace-nowrap"
               />
             )}
 
             {showHome && (
               <BigButton
                 k="home"
-                icon={<Home className="w-6 h-6 sm:w-8 sm:h-8" />}
+                size="small"
+                icon={<Home className="w-4 h-4 sm:w-5 sm:h-5" />}
                 href="/"
                 variant="secondary"
-                className="!min-h-[56px] sm:!min-h-[80px] !px-2 sm:!px-6 !py-1 !text-[var(--text-min)] shrink"
+                className="!min-h-[38px] sm:!min-h-[44px] !px-2.5 sm:!px-4 !py-1 !text-xs sm:!text-sm rounded-xl shrink whitespace-nowrap"
               />
             )}
           </div>
 
-          {/* Right Header Action & Help Trigger */}
-          <div className="flex items-center gap-1 sm:gap-4">
-            {headerAction}
-
-            <BigButton
-              k="help"
-              icon={<HelpCircle className="w-6 h-6 sm:w-8 sm:h-8" />}
-              onClick={() => setShowHelpModal(true)}
-              variant="accent"
-              className="!min-h-[56px] sm:!min-h-[80px] !px-2 sm:!px-6 !py-1 !text-[var(--text-min)] shrink"
-            />
-          </div>
-
-          {/* Heading (if provided) */}
+          {/* Center Heading (if provided) */}
           {(effectiveTitle || effectiveTitleKey) && (
-            <h1 className="w-full sm:w-auto sm:flex-1 text-[var(--text-heading)] font-bold text-center order-last sm:order-none px-2 mt-2 sm:mt-0">
+            <h1 className="flex-1 text-[var(--text-heading)] font-bold text-center px-1 sm:px-2 truncate">
               <Bi
                 text={effectiveTitle}
                 k={effectiveTitleKey}
                 layout="auto"
-                enClassName="text-[0.85em] text-[var(--text-secondary)]"
-                teClassName="text-[1.05em] text-[var(--accent)]"
+                enClassName="text-[0.7em] sm:text-[0.85em] text-[var(--text-secondary)]"
+                teClassName="text-[0.85em] sm:text-[1.05em] text-[var(--accent)]"
               />
             </h1>
           )}
+
+          {/* Right Header Action & Help Trigger */}
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0 ml-auto">
+            {headerAction}
+
+            {showUpload && (
+              <BigButton
+                k="uploadPhotosMovies"
+                size="small"
+                icon={<UploadCloud className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-300" />}
+                href="/admin/upload"
+                variant="secondary"
+                className="!min-h-[38px] sm:!min-h-[44px] !px-2 sm:!px-3.5 !py-1 !text-xs sm:!text-sm font-bold rounded-xl border-2 border-yellow-400/80 bg-yellow-400/10 hover:bg-yellow-400 hover:text-black shrink whitespace-nowrap"
+              />
+            )}
+
+            <BigButton
+              k="help"
+              size="small"
+              icon={<HelpCircle className="w-4 h-4 sm:w-5 sm:h-5" />}
+              onClick={() => setShowHelpModal(true)}
+              variant="accent"
+              className="!min-h-[38px] sm:!min-h-[44px] !px-2 sm:!px-3.5 !py-1 !text-xs sm:!text-sm font-bold rounded-xl shrink whitespace-nowrap"
+            />
+          </div>
         </div>
       </header>
 

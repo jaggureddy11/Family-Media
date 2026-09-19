@@ -151,47 +151,47 @@ export default function PhotosPage() {
 
   return (
     <PageShell titleStringKey="photos">
-      {/* 3 Giant Top Navigation Destination Buttons */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+      {/* 3 Top Navigation Destination Buttons */}
+      <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-4 sm:mb-8">
         <button
           type="button"
           onClick={() => startTransition(() => setActiveTab("timeline"))}
-          className={`min-h-[80px] sm:min-h-[88px] px-6 py-4 rounded-3xl font-extrabold text-2xl sm:text-3xl flex items-center justify-center gap-3 border-4 transition-all shadow-lg active:scale-95 focus:ring-4 focus:ring-amber-400 ${
+          className={`min-h-[48px] sm:min-h-[88px] px-2 sm:px-6 py-1.5 sm:py-4 rounded-2xl sm:rounded-3xl font-extrabold text-xs sm:text-2xl flex items-center justify-center gap-1.5 sm:gap-3 border-2 sm:border-4 transition-all shadow-lg active:scale-95 focus:ring-4 focus:ring-amber-400 ${
             activeTab === "timeline" && !selectedAlbum
               ? "bg-amber-400 text-black border-amber-300 shadow-amber-400/20"
               : "bg-slate-900 text-white border-slate-700 hover:border-amber-400 hover:bg-slate-800"
           }`}
           aria-current={activeTab === "timeline" ? "page" : undefined}
         >
-          <span className="text-3xl">🗓</span>
+          <span className="text-base sm:text-3xl">🗓</span>
           <Bi stringKey="timeline" />
         </button>
 
         <button
           type="button"
           onClick={() => startTransition(() => setActiveTab("albums"))}
-          className={`min-h-[80px] sm:min-h-[88px] px-6 py-4 rounded-3xl font-extrabold text-2xl sm:text-3xl flex items-center justify-center gap-3 border-4 transition-all shadow-lg active:scale-95 focus:ring-4 focus:ring-amber-400 ${
+          className={`min-h-[48px] sm:min-h-[88px] px-2 sm:px-6 py-1.5 sm:py-4 rounded-2xl sm:rounded-3xl font-extrabold text-xs sm:text-2xl flex items-center justify-center gap-1.5 sm:gap-3 border-2 sm:border-4 transition-all shadow-lg active:scale-95 focus:ring-4 focus:ring-amber-400 ${
             activeTab === "albums" || selectedAlbum
               ? "bg-amber-400 text-black border-amber-300 shadow-amber-400/20"
               : "bg-slate-900 text-white border-slate-700 hover:border-amber-400 hover:bg-slate-800"
           }`}
           aria-current={activeTab === "albums" ? "page" : undefined}
         >
-          <span className="text-3xl">📁</span>
+          <span className="text-base sm:text-3xl">📁</span>
           <Bi stringKey="albums" />
         </button>
 
         <button
           type="button"
           onClick={() => startTransition(() => setActiveTab("favorites"))}
-          className={`min-h-[80px] sm:min-h-[88px] px-6 py-4 rounded-3xl font-extrabold text-2xl sm:text-3xl flex items-center justify-center gap-3 border-4 transition-all shadow-lg active:scale-95 focus:ring-4 focus:ring-amber-400 ${
+          className={`min-h-[48px] sm:min-h-[88px] px-2 sm:px-6 py-1.5 sm:py-4 rounded-2xl sm:rounded-3xl font-extrabold text-xs sm:text-2xl flex items-center justify-center gap-1.5 sm:gap-3 border-2 sm:border-4 transition-all shadow-lg active:scale-95 focus:ring-4 focus:ring-amber-400 ${
             activeTab === "favorites" && !selectedAlbum
               ? "bg-amber-400 text-black border-amber-300 shadow-amber-400/20"
               : "bg-slate-900 text-white border-slate-700 hover:border-amber-400 hover:bg-slate-800"
           }`}
           aria-current={activeTab === "favorites" ? "page" : undefined}
         >
-          <span className="text-3xl">❤️</span>
+          <span className="text-base sm:text-3xl">❤️</span>
           <Bi stringKey="favorites" />
         </button>
       </div>

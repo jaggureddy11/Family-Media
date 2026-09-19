@@ -326,6 +326,10 @@ export const STRINGS = {
     te: "మీడియాను అప్‌లోడ్ చేయండి",
   },
   uploadPhotosMovies: {
+    en: "Upload",
+    te: "అప్‌లోడ్",
+  },
+  uploadPhotosMoviesLong: {
     en: "Upload Photos/Movies",
     te: "ఫోటోలు/సినిమాలు అప్‌లోడ్",
   },

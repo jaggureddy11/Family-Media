@@ -140,10 +140,11 @@ export default function MoviesPage() {
       headerAction={
         <BigButton
           k="search"
-          icon={<Search className="w-6 h-6 sm:w-8 sm:h-8" />}
+          size="small"
+          icon={<Search className="w-4 h-4 sm:w-5 sm:h-5" />}
           onClick={() => setShowSearchModal(true)}
           variant="accent"
-          className="!min-h-[56px] sm:!min-h-[80px] !px-3 sm:!px-6 !py-1"
+          className="!min-h-[38px] sm:!min-h-[44px] !px-2.5 sm:!px-3.5 !py-1 !text-xs sm:!text-sm font-bold rounded-xl shrink whitespace-nowrap"
         />
       }
     >

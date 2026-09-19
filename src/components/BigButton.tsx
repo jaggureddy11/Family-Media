@@ -78,7 +78,7 @@ export const BigButton: React.FC<BigButtonProps> = ({
 
   const sizeStyles =
     size === "small"
-      ? "min-h-[56px] px-3 py-2 text-xl"
+      ? "min-h-[38px] sm:min-h-[44px] px-2.5 sm:px-4 py-1 text-xs sm:text-sm"
       : size === "large"
       ? "min-h-[88px] px-8 py-5 text-3xl"
       : "min-h-[72px] sm:min-h-[88px] px-3 sm:px-6 py-2.5 sm:py-4 text-[var(--text-btn)]";
@@ -86,9 +86,8 @@ export const BigButton: React.FC<BigButtonProps> = ({
   const baseStyles = `
     kutumbam-focus
     ${sizeStyles}
-    border-4
-    rounded-3xl
-    flex items-center justify-center gap-2 sm:gap-4
+    ${size === "small" ? "border-2 sm:border-3 rounded-xl" : "border-4 rounded-3xl"}
+    flex items-center justify-center ${size === "small" ? "gap-1.5 sm:gap-2" : "gap-2 sm:gap-4"}
     cursor-pointer
     transition-all duration-150
     active:scale-95
@@ -104,7 +103,9 @@ export const BigButton: React.FC<BigButtonProps> = ({
     <>
       {icon && (
         <span
-          className={`flex-shrink-0 flex items-center justify-center w-8 h-8 sm:w-12 sm:h-12 ${
+          className={`flex-shrink-0 flex items-center justify-center ${
+            size === "small" ? "w-4 h-4 sm:w-5 sm:h-5" : "w-8 h-8 sm:w-12 sm:h-12"
+          } ${
             variant === "accent" ? "!text-black" : "text-[var(--accent)]"
           }`}
         >
@@ -121,8 +122,8 @@ export const BigButton: React.FC<BigButtonProps> = ({
           te={te}
           layout="auto"
           className={`font-bold tracking-tight text-center ${variant === "accent" ? "!text-black" : ""}`}
-          enClassName={`text-[0.9em] sm:text-[1.1em] ${variant === "accent" ? "!text-black" : ""}`}
-          teClassName={`text-[1.05em] sm:text-[1.25em] ${variant === "accent" ? "!text-black" : ""}`}
+          enClassName={`${size === "small" ? "text-xs sm:text-sm font-medium" : "text-[0.9em] sm:text-[1.1em]"} ${variant === "accent" ? "!text-black" : ""}`}
+          teClassName={`${size === "small" ? "text-xs sm:text-sm font-bold" : "text-[1.05em] sm:text-[1.25em]"} ${variant === "accent" ? "!text-black" : ""}`}
         />
       )}
     </>
