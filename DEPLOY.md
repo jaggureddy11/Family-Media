@@ -1,120 +1,165 @@
-# Kutumbam · కుటుంబం — Production Deployment Guide
-**Zero-Ops Architecture: Vercel + Neon PostgreSQL + Cloudflare R2**
+# Kutumbam · కుటుంబం — Production Deployment Guide (Vercel + Neon + Backblaze B2)
 
-This guide provides a comprehensive, click-by-click walkthrough to deploy Kutumbam into production.
-
----
-
-## 1. Cloudflare R2 (Private Zero-Egress Storage)
-
-1. **Log in to Cloudflare Dashboard**:
-   - Go to **R2 Storage** > **Create bucket**.
-   - Bucket Name: `kutumbam-media` (or your chosen name).
-   - Location: Automatic (or closest region).
-   - Click **Create Bucket**.
-
-2. **Strict Privacy Check (NON-NEGOTIABLE)**:
-   - In your bucket settings, ensure **Public access** is **OFF**.
-   - Do **NOT** connect a custom public domain or enable public R2 dev URLs.
-   - All media is accessed solely via signed URLs with $\le 2\text{h}$ validity.
-
-3. **Configure CORS**:
-   - In bucket **Settings** > **CORS Policy**, add:
-     ```json
-     [
-       {
-         "AllowedOrigins": [
-           "https://your-kutumbam-domain.vercel.app",
-           "https://kutumbam.yourdomain.com",
-           "http://localhost:3000"
-         ],
-         "AllowedMethods": ["GET", "PUT", "HEAD"],
-         "AllowedHeaders": ["*"],
-         "ExposeHeaders": ["ETag", "Content-Range", "Accept-Ranges"],
-         "MaxAgeSeconds": 3600
-       }
-     ]
-     ```
-
-4. **Generate API Tokens**:
-   - In R2 Overview > **Manage R2 API Tokens** > **Create API Token**.
-   - Permissions: **Object Read & Write**.
-   - Specify bucket: `kutumbam-media`.
-   - Copy:
-     - `Account ID`
-     - `Access Key ID`
-     - `Secret Access Key`
+This document provides complete, click-by-click instructions to deploy Kutumbam to **Vercel** with **Neon Serverless PostgreSQL** and **Backblaze B2 Object Storage**.
 
 ---
 
-## 2. Neon (Serverless PostgreSQL)
+## 1. Push Code to GitHub
 
-1. **Create Neon Project**:
-   - Go to [console.neon.tech](https://console.neon.tech) and create a project named `kutumbam-prod`.
-2. **Copy Connection String**:
-   - Copy the Pooled Connection String (format: `postgresql://user:password@ep-xyz-pooler.region.neon.tech/neondb?sslmode=require`).
-3. **Run Migrations**:
-   - From your local terminal (pointing `DATABASE_URL` to your Neon database):
-     ```bash
-     npx prisma db push
-     ```
+The repository remote is configured as:
+`https://github.com/jaggureddy11/Family-Media.git`
 
----
-
-## 3. Generate Admin Passphrase Hash
-
-1. Run the Kutumbam CLI tool:
+1. Run the local pre-commit secret scan to verify no credentials exist in code:
    ```bash
-   npm run hash-passphrase
+   npm run secret-scan
    ```
-2. Enter your strong admin passphrase (e.g. `M0m$F@m1lyM3d1a!2026`).
-3. Copy the output bcrypt hash starting with `$2a$12$...` or `$2b$12$...`.
-
----
-
-## 4. Vercel Deployment
-
-1. **Import Git Repository**:
-   - Go to [vercel.com/new](https://vercel.com/new) and select the `Family media` repository.
-   - Framework Preset: **Next.js**.
-   - Build Command: `next build` (or `npx prisma generate && next build`).
-   - Output Directory: `.next`.
-
-2. **Set Environment Variables**:
-   Add the following in Vercel Project Settings > **Environment Variables**:
-
-   | Variable Name | Description | Example / Source |
-   |---|---|---|
-   | `DATABASE_URL` | Neon Postgres pooled connection string | `postgresql://...neon.tech/neondb?sslmode=require` |
-   | `R2_ACCOUNT_ID` | Cloudflare Account ID | `a1b2c3d4e5f6...` |
-   | `R2_ACCESS_KEY_ID` | Cloudflare R2 Access Key ID | `24-char hex string` |
-   | `R2_SECRET_ACCESS_KEY` | Cloudflare R2 Secret Access Key | `64-char hex string` |
-   | `R2_BUCKET_NAME` | Cloudflare R2 Bucket Name | `kutumbam-media` |
-   | `R2_ENDPOINT` | (Optional) Custom R2 Endpoint | `https://<ACCOUNT_ID>.r2.cloudflarestorage.com` |
-   | `ADMIN_PASSPHRASE_HASH` | Bcrypt hash generated via CLI | `$2a$12$....` |
-   | `SESSION_SECRET` | 64+ char random secret for signed cookies | `openssl rand -hex 32` |
-   | `NEXT_PUBLIC_APP_URL` | Production URL for QR codes / links | `https://your-domain.vercel.app` |
-   | `NEXT_PUBLIC_HELP_CONTACT_NAME` | Name shown on Mom's Help card | `Kiran (Son)` |
-   | `NEXT_PUBLIC_HELP_PHONE_NUMBER` | Direct phone link (`tel:`) | `+919876543210` |
-   | `NEXT_PUBLIC_HELP_WHATSAPP_NUMBER` | WhatsApp direct contact | `+919876543210` |
-
-3. **Deploy**:
-   - Click **Deploy**.
-   - Vercel will build and launch your production site.
-
----
-
-## 5. Post-Deployment Verification (`npm run smoke`)
-
-1. Set your local `.env` with production credentials.
-2. Run the automated smoke test:
+2. Commit all staged files:
    ```bash
-   npm run smoke
+   git add .
+   git commit -m "Prepare production deployment with safe DB guardrails and pooled Neon connection"
    ```
-3. Verification Checklist:
-   - [x] Direct unauthenticated requests to R2 bucket return `403 Forbidden`.
-   - [x] Admin can log in at `/login` with passphrase.
-   - [x] Admin creates a single-use 24-hour device link in `/admin/family`.
-   - [x] Mom opens the link on her phone, gains 12-month persistent session.
-   - [x] Movies, photos, family videos, and files load smoothly with Telugu & English titles.
-   - [x] Global "Help · సహాయం" button calls and messages the configured family member.
+3. Set the remote (if not already set) and push to the main branch:
+   ```bash
+   git remote add origin https://github.com/jaggureddy11/Family-Media.git || git remote set-url origin https://github.com/jaggureddy11/Family-Media.git
+   git branch -M main
+   git push -u origin main
+   ```
+
+---
+
+## 2. Neon Database Connection Setup
+
+Kutumbam runs against a serverless PostgreSQL instance on **Neon**. In a serverless environment like Vercel, connections must use Neon's connection pooler.
+
+### Connection String Format
+In the Neon Console:
+1. Go to your project dashboard at [console.neon.tech](https://console.neon.tech).
+2. Look at the **Connection Details** widget.
+3. Check the **Pooled connection** checkbox. The hostname will contain `-pooler` (e.g., `ep-shiny-sun-b5vghxti-pooler.c-7.us-east-2.aws.neon.tech`).
+4. Append `&pgbouncer=true` to ensure Prisma operates correctly through PgBouncer transaction pooling.
+
+**Exact String Format:**
+```text
+postgresql://<USERNAME>:<PASSWORD>@ep-<ENDPOINT_ID>-pooler.<REGION>.aws.neon.tech/neondb?sslmode=require&pgbouncer=true
+```
+
+> [!TIP]
+> If you have not yet created the database schema on Neon, run from your local terminal once before deploying:
+> ```bash
+> npx prisma db push
+> ```
+
+---
+
+## 3. Vercel Deployment (Click-by-Click)
+
+1. Go to [vercel.com](https://vercel.com) and log in.
+2. Click **"Add New..."** > **"Project"**.
+3. Under **"Import Git Repository"**, locate `jaggureddy11/Family-Media` and click **"Import"**.
+4. In the configuration screen:
+   - **Project Name**: `family-media` (or your chosen name).
+   - **Framework Preset**: **Next.js** (detected automatically).
+   - **Root Directory**: `./` (default).
+   - **Build Command**: Leave default (automatically executes `prisma generate && next build` via `package.json`).
+   - **Install Command**: Leave default (automatically executes `npm install`, which triggers `postinstall: prisma generate`).
+5. Open the **"Environment Variables"** accordion and add the variables listed in Section 4 below.
+6. Click **"Deploy"**.
+7. Wait 1–2 minutes for the build to finish. Once complete, note your assigned Vercel URL (e.g. `https://family-media-ten.vercel.app` or `https://family-media.vercel.app`).
+
+---
+
+## 4. Production Environment Variables (Vercel)
+
+Add **ONLY** the production variables below into Vercel (**Settings** > **Environment Variables**).
+
+> [!CAUTION]
+> **NEVER add the following variables to Vercel:**
+> - `TEST_MODE` (Do NOT set)
+> - `REAL_STORAGE_TEST` (Do NOT set)
+> - `USE_MOCK_DB` (Do NOT set)
+> - `ADMIN_PASSPHRASE` (Do NOT set plaintext passphrase in production; production requires `ADMIN_PASSPHRASE_HASH`)
+
+| Variable Name | Value / Format | Description |
+| :--- | :--- | :--- |
+| `DATABASE_URL` | `postgresql://<USER>:<PASS>@<HOST>-pooler.../neondb?sslmode=require&pgbouncer=true` | Neon pooled PostgreSQL connection string |
+| `ADMIN_PASSPHRASE_HASH` | Output from `npm run hash-passphrase` (starts with `$2b$`) | Bcrypt hash of your admin passphrase |
+| `SESSION_SECRET` | 32+ random characters | Secret key for signing 12-month device session tokens |
+| `STORAGE_ENDPOINT` | `https://s3.<YOUR_REGION>.backblazeb2.com` | Backblaze B2 S3 API endpoint |
+| `STORAGE_REGION` | `<YOUR_REGION>` (e.g. `us-east-005`) | Backblaze B2 region |
+| `STORAGE_ACCESS_KEY_ID` | `<YOUR_KEY_ID>` | Backblaze B2 Application Key ID |
+| `STORAGE_SECRET_ACCESS_KEY` | `<YOUR_APPLICATION_KEY>` | Backblaze B2 Application Key Secret |
+| `STORAGE_BUCKET_NAME` | `<YOUR_BUCKET_NAME>` | Name of your private B2 bucket |
+| `STORAGE_FORCE_PATH_STYLE` | `true` | Required for Backblaze B2 S3 API compatibility |
+| `NEXT_PUBLIC_HELP_CONTACT_NAME` | e.g. `Jaggu` | Name displayed on Mom's 1-tap Help screen |
+| `NEXT_PUBLIC_HELP_PHONE_NUMBER` | e.g. `+919876543210` | Direct phone number for Mom's 1-tap call |
+| `NEXT_PUBLIC_HELP_WHATSAPP_NUMBER` | e.g. `+919876543210` | WhatsApp number for Mom's 1-tap message |
+| `SITE_URL` | `https://<YOUR_APP_NAME>.vercel.app` | (Recommended) Production canonical site URL for QR codes & links |
+| `ADMIN_EMAIL_ALLOWLIST` | e.g. `admin@kutumbam.local` | (Optional) Allowed admin email identifiers |
+
+### Generating the Admin Hash:
+In your local terminal:
+```bash
+npm run hash-passphrase
+```
+Enter your secret passphrase, and copy the generated hash value into Vercel's `ADMIN_PASSPHRASE_HASH`.
+
+---
+
+## 5. Add Vercel Domain to Backblaze B2 CORS Rules
+
+Because uploads and video streaming stream directly between the client browser and Backblaze B2, B2 must permit your production Vercel domain.
+
+1. Log in to [backblaze.com/b2](https://www.backblaze.com/b2).
+2. Navigate to **Buckets** and locate your bucket.
+3. Click **Bucket Settings** (or **CORS Rules**).
+4. Update the **Allowed Origins** list to include your exact Vercel domain:
+   ```json
+   [
+     {
+       "corsRuleName": "kutumbam-production-cors",
+       "allowedOrigins": [
+         "http://localhost:3000",
+         "https://<YOUR_PROJECT_NAME>.vercel.app",
+         "https://*.vercel.app"
+       ],
+       "allowedOperations": [
+         "s3_put",
+         "s3_get",
+         "s3_head",
+         "s3_post",
+         "s3_delete"
+       ],
+       "allowedHeaders": [
+         "*"
+       ],
+       "exposeHeaders": [
+         "ETag",
+         "Content-Range",
+         "Accept-Ranges",
+         "Content-Length"
+       ],
+       "maxAgeSeconds": 3600
+     }
+   ]
+   ```
+5. Save the CORS configuration.
+
+---
+
+## 6. First Login & Verification
+
+1. Open your production site: `https://<YOUR_PROJECT_NAME>.vercel.app/login`.
+2. Enter your plaintext admin passphrase (the one you hashed in Step 4).
+3. Confirm you are redirected to `/admin/library`.
+4. Inspect the **Top Status Bar**:
+   - **Storage**: `Storage: Backblaze B2 (real)` (in green)
+   - **Database**: `Database: Neon (real)` (in green)
+5. Go to `/admin/family`:
+   - Click **"Add Family Member"** to add Mom (`అమ్మ`).
+   - Click **"Generate Device Link"**.
+   - Confirm the QR code and Link URL use your production domain (`https://<YOUR_PROJECT_NAME>.vercel.app/link/...`).
+6. Scan the QR code on Mom's phone or iPad:
+   - The device automatically redeems the single-use link.
+   - It stores a persistent 12-month session cookie.
+   - The home page greets Mom in Telugu and English: `"నమస్తే, అమ్మ · Namaste, Amma"`.
+7. Go to `/admin/install` to view or print the step-by-step PWA install instructions for Mom's phone.

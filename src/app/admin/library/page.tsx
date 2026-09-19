@@ -137,6 +137,7 @@ export default function AdminLibraryPage() {
         { key: "uploadMedia", href: "/admin/upload" },
         { key: "activeDevices", href: "/admin/devices" },
         { key: "familyMembers", href: "/admin/family" },
+        { key: "installGuide", href: "/admin/install" },
       ]}
     >
       <div className="max-w-6xl mx-auto space-y-8 pb-16">

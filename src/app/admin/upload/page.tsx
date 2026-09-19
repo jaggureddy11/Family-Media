@@ -214,7 +214,14 @@ export default function AdminUploadPage() {
       const yearFolder = item.year ? item.year.toString() : new Date().getFullYear().toString();
       const mediaId = `media_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
       const safeFilename = encodeURIComponent(item.name.replace(/\s+/g, "_"));
-      const storageKey = item.storageKey || `originals/${item.type}/${yearFolder}/${mediaId}/${safeFilename}`;
+      const testPrefix =
+        (typeof window !== "undefined" && (window as any).__KUTUMBAM_TEST_PREFIX) ||
+        process.env.NEXT_PUBLIC_TEST_PREFIX;
+      const storageKey =
+        item.storageKey ||
+        (testPrefix
+          ? `${testPrefix}${mediaId}/${safeFilename}`
+          : `originals/${item.type}/${yearFolder}/${mediaId}/${safeFilename}`);
 
       let posterKey: string | undefined;
       let thumbKey: string | undefined;
@@ -244,13 +251,13 @@ export default function AdminUploadPage() {
 
       // 1. Upload Poster directly if extracted
       if (item.posterBlob) {
-        posterKey = `posters/${mediaId}.jpg`;
+        posterKey = testPrefix ? `${testPrefix}posters/${mediaId}.jpg` : `posters/${mediaId}.jpg`;
         await directPutBlob(posterKey, item.posterBlob, "image/jpeg");
       }
 
       // 2. Upload Thumbnail directly if resized
       if (item.thumbBlob) {
-        thumbKey = `thumbs/${mediaId}.webp`;
+        thumbKey = testPrefix ? `${testPrefix}thumbs/${mediaId}.webp` : `thumbs/${mediaId}.webp`;
         await directPutBlob(thumbKey, item.thumbBlob, "image/webp");
       }
 
@@ -291,58 +298,100 @@ export default function AdminUploadPage() {
 
         const totalParts = Math.ceil(item.file.size / CHUNK_SIZE);
         const completedPartNumbers = new Set(completedParts.map((p) => p.partNumber));
-
-        for (let partNumber = 1; partNumber <= totalParts; partNumber++) {
-          if (controller.signal.aborted) {
-            return;
+        const partsToUpload: number[] = [];
+        for (let p = 1; p <= totalParts; p++) {
+          if (!completedPartNumbers.has(p)) {
+            partsToUpload.push(p);
           }
-
-          if (completedPartNumbers.has(partNumber)) {
-            continue;
-          }
-
-          const start = (partNumber - 1) * CHUNK_SIZE;
-          const end = Math.min(start + CHUNK_SIZE, item.file.size);
-          const chunk = item.file.slice(start, end);
-
-          const signRes = await fetch("/api/storage/multipart/sign-part", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ key: storageKey, uploadId, partNumber }),
-            signal: controller.signal,
-          });
-          if (!signRes.ok) {
-            throw new Error(`Failed to sign part ${partNumber}: ${signRes.status}`);
-          }
-          const { url } = await signRes.json();
-
-          const uploadChunkRes = await fetch(url, {
-            method: "PUT",
-            body: chunk,
-            signal: controller.signal,
-          });
-          if (!uploadChunkRes.ok) {
-            throw new Error(`Direct part ${partNumber} upload failed: ${uploadChunkRes.status}`);
-          }
-
-          const rawEtag = uploadChunkRes.headers.get("ETag") || `part_${partNumber}`;
-          const etag = rawEtag.replace(/"/g, "");
-          completedParts.push({ partNumber, etag });
-          completedParts.sort((a, b) => a.partNumber - b.partNumber);
-
-          try {
-            localStorage.setItem(
-              storageKeyPrefix,
-              JSON.stringify({ uploadId, storageKey, parts: completedParts })
-            );
-          } catch {}
-
-          const partProgress = Math.round((completedParts.length / totalParts) * 90);
-          updateQueueItem(item.id, {
-            progress: Math.max(10, partProgress),
-            uploadedBytes: completedParts.length * CHUNK_SIZE,
-          });
         }
+
+        const CONCURRENCY = 6;
+        let nextIndex = 0;
+        let activeError: Error | null = null;
+
+        const uploadWorker = async () => {
+          while (nextIndex < partsToUpload.length) {
+            if (controller.signal.aborted || activeError) return;
+            const currentIndex = nextIndex++;
+            const partNumber = partsToUpload[currentIndex];
+
+            const start = (partNumber - 1) * CHUNK_SIZE;
+            const end = Math.min(start + CHUNK_SIZE, item.file.size);
+            const chunk = item.file.slice(start, end);
+
+            const signRes = await fetch("/api/storage/multipart/sign-part", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ key: storageKey, uploadId, partNumber }),
+              signal: controller.signal,
+            });
+            if (!signRes.ok) {
+              throw new Error(`Failed to sign part ${partNumber}: ${signRes.status}`);
+            }
+            const { url } = await signRes.json();
+
+            let uploadChunkRes: Response | null = null;
+            let lastError: any = null;
+            const maxRetries = 3;
+
+            for (let attempt = 1; attempt <= maxRetries; attempt++) {
+              if (controller.signal.aborted || activeError) return;
+              try {
+                uploadChunkRes = await fetch(url, {
+                  method: "PUT",
+                  body: chunk,
+                  signal: controller.signal,
+                });
+                if (uploadChunkRes.ok) break;
+                throw new Error(`Status ${uploadChunkRes.status}`);
+              } catch (err: any) {
+                if (controller.signal.aborted) return;
+                lastError = err;
+                if (attempt < maxRetries) {
+                  await new Promise((resolve) => setTimeout(resolve, attempt * 750));
+                }
+              }
+            }
+
+            if (!uploadChunkRes || !uploadChunkRes.ok) {
+              const err = new Error(
+                `Direct part ${partNumber} upload failed after ${maxRetries} attempts: ${
+                  lastError?.message || uploadChunkRes?.status
+                }`
+              );
+              activeError = err;
+              throw err;
+            }
+
+            const rawEtag = uploadChunkRes.headers.get("ETag") || `part_${partNumber}`;
+            const etag = rawEtag.replace(/"/g, "");
+            completedParts.push({ partNumber, etag });
+            completedParts.sort((a, b) => a.partNumber - b.partNumber);
+            console.log(`[Multipart Upload] Part ${partNumber}/${totalParts} uploaded successfully (ETag: ${etag})`);
+
+            try {
+              localStorage.setItem(
+                storageKeyPrefix,
+                JSON.stringify({ uploadId, storageKey, parts: completedParts })
+              );
+            } catch {}
+
+            const partProgress = Math.round((completedParts.length / totalParts) * 90);
+            updateQueueItem(item.id, {
+              progress: Math.max(10, partProgress),
+              uploadedBytes: completedParts.length * CHUNK_SIZE,
+            });
+          }
+        };
+
+        const workers = Array.from(
+          { length: Math.min(CONCURRENCY, partsToUpload.length) },
+          () => uploadWorker()
+        );
+        await Promise.all(workers);
+
+        if (controller.signal.aborted) return;
+        if (activeError) throw activeError;
 
         // Complete multipart upload directly in S3
         const completeRes = await fetch("/api/storage/multipart/complete", {
@@ -421,6 +470,7 @@ export default function AdminUploadPage() {
         { key: "library", href: "/admin/library" },
         { key: "activeDevices", href: "/admin/devices" },
         { key: "familyMembers", href: "/admin/family" },
+        { key: "installGuide", href: "/admin/install" },
       ]}
     >
       <div className="max-w-5xl mx-auto space-y-8 pb-16">

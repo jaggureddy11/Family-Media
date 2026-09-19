@@ -18,6 +18,13 @@ export default function AdminInstallGuidePage() {
       titleEn="Install on Mom's Phone"
       titleTe="అమ్మ ఫోన్‌లో ఇన్‌స్టాల్ చేయండి"
       backHref="/admin/library"
+      adminOnly
+      navItems={[
+        { key: "library", href: "/admin/library" },
+        { key: "uploadMedia", href: "/admin/upload" },
+        { key: "familyMembers", href: "/admin/family" },
+        { key: "activeDevices", href: "/admin/devices" },
+      ]}
     >
       <div className="max-w-5xl mx-auto space-y-10">
         {/* Print Action Bar (Hidden on print) */}

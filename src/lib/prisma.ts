@@ -1,5 +1,7 @@
 import { PrismaClient, Role } from "@prisma/client";
 import { SAMPLE_MEDIA } from "./sample-media";
+import { assertTestDatabaseSafety, assertSafeDeleteMany } from "./db-safety";
+export * from "./db-safety";
 
 // Global singleton for PrismaClient
 const globalForPrisma = globalThis as unknown as {
@@ -668,35 +670,7 @@ class InMemoryDb {
     };
   }
 
-  rateLimitAttempts: any[] = [];
-  get rateLimitAttempt() {
-    return {
-      deleteMany: async ({ where }: any) => {
-        const before = this.rateLimitAttempts.length;
-        if (where?.createdAt?.lt) {
-          this.rateLimitAttempts = this.rateLimitAttempts.filter(
-            (r) => new Date(r.createdAt).getTime() >= new Date(where.createdAt.lt).getTime()
-          );
-        }
-        return { count: before - this.rateLimitAttempts.length };
-      },
-      count: async ({ where }: any) => {
-        let list = [...this.rateLimitAttempts];
-        if (where?.key) list = list.filter((r) => r.key === where.key);
-        if (where?.createdAt?.gte) {
-          list = list.filter(
-            (r) => new Date(r.createdAt).getTime() >= new Date(where.createdAt.gte).getTime()
-          );
-        }
-        return list.length;
-      },
-      create: async ({ data }: any) => {
-        const item = { id: `rla_${Date.now()}_${Math.random()}`, ...data, createdAt: new Date() };
-        this.rateLimitAttempts.push(item);
-        return item;
-      },
-    };
-  }
+
 }
 
 // In production (NODE_ENV=production or on Vercel), in-memory Prisma is strictly disabled at runtime
@@ -710,6 +684,9 @@ const isTestEnv =
   process.env.VITEST === "true" ||
   process.env.USE_MOCK_DB === "true";
 
+// Safety check: ensure automated tests (TEST_MODE=true) cannot target real remote DATABASE_URL
+assertTestDatabaseSafety();
+
 if (isProduction && !isBuildPhase && !isTestEnv) {
   if (
     !process.env.DATABASE_URL ||
@@ -722,22 +699,47 @@ if (isProduction && !isBuildPhase && !isTestEnv) {
   }
 }
 
-// Use real PrismaClient if DATABASE_URL is present and not in test environment
+// If DATABASE_URL is set outside a test run, always use real Prisma
 const hasRealDatabaseUrl =
-  process.env.DATABASE_URL &&
-  !process.env.DATABASE_URL.includes("localhost:5432") &&
+  Boolean(process.env.DATABASE_URL) &&
+  !process.env.DATABASE_URL!.includes("localhost:5432") &&
   !isTestEnv;
 
 let prismaInstance: any;
 
 if (hasRealDatabaseUrl && !isBuildPhase) {
-  prismaInstance =
-    globalForPrisma.prisma ??
-    new PrismaClient({
+  if (!globalForPrisma.prisma) {
+    const baseClient = new PrismaClient({
       log: process.env.NODE_ENV === "development" ? ["warn", "error"] : ["error"],
     });
-  if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prismaInstance;
+
+    // Guardrail: Intercept deleteMany to strictly forbid unconditional table wipeout on real DB
+    const extendedClient = baseClient.$extends({
+      query: {
+        $allModels: {
+          async deleteMany({ model, args, query }) {
+            assertSafeDeleteMany(model, args?.where);
+            return query(args);
+          },
+        },
+      },
+    });
+
+    globalForPrisma.prisma = extendedClient as unknown as PrismaClient;
+  }
+  prismaInstance = globalForPrisma.prisma;
 } else {
+  // Loud startup warning if InMemoryDb is active in development mode
+  if (!isBuildPhase && !isTestEnv && process.env.NODE_ENV !== "production") {
+    console.warn(
+      "\n================================================================================" +
+      "\n⚠️  [LOUD WARNING] DEVELOPMENT SERVER IS RUNNING ON InMemoryDb (MOCK DATABASE)!" +
+      "\n   Changes will NOT be saved to the live PostgreSQL/Neon database." +
+      "\n   To connect to real Neon, ensure DATABASE_URL is set and TEST_MODE is not enabled." +
+      "\n================================================================================\n"
+    );
+  }
+
   if (!globalForPrisma.mockDb) {
     globalForPrisma.mockDb = new InMemoryDb();
   }

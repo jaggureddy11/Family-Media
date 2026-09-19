@@ -11,7 +11,8 @@ export async function setupSessionCookie(
   role: Role = Role.FAMILY,
   userId: string = "mom-1"
 ): Promise<string> {
-  const res = await context.request.post("http://localhost:3000/api/auth/test-session", {
+  const baseUrl = process.env.PLAYWRIGHT_BASE_URL || "http://localhost:3001";
+  const res = await context.request.post(`${baseUrl}/api/auth/test-session`, {
     data: { userId, role },
   });
 
@@ -24,7 +25,7 @@ export async function setupSessionCookie(
     {
       name: SESSION_COOKIE_NAME,
       value: data.cookieValue,
-      url: "http://localhost:3000",
+      url: baseUrl,
       httpOnly: true,
       secure: false,
       sameSite: "Lax",

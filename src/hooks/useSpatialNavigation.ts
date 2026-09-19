@@ -39,6 +39,16 @@ export function useSpatialNavigation({
   useEffect(() => {
     if (!enabled) return;
 
+    // Detect TV mode from resolution or User Agent
+    if (typeof window !== "undefined") {
+      const isTv =
+        window.innerWidth >= 1800 ||
+        /smart-tv|googletv|appletv|hbbtv|pov_tv|netcast.tv/i.test(navigator.userAgent);
+      if (isTv) {
+        document.body.classList.add("tv-mode");
+      }
+    }
+
     function getItems(): HTMLElement[] {
       const elements = Array.from(
         document.querySelectorAll<HTMLElement>(itemSelector)

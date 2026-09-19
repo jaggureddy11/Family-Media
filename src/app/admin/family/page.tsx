@@ -137,6 +137,12 @@ export default function AdminFamilyPage() {
           <Bi k="activeDevices" />
         </Link>
       }
+      navItems={[
+        { key: "library", href: "/admin/library" },
+        { key: "uploadMedia", href: "/admin/upload" },
+        { key: "activeDevices", href: "/admin/devices" },
+        { key: "installGuide", href: "/admin/install" },
+      ]}
     >
       <div className="flex flex-col gap-12 pb-16">
         {/* Generated Link Modal / Card */}

@@ -14,7 +14,7 @@ import { Role } from "@prisma/client";
 export async function POST(request: NextRequest) {
   const isAllowed =
     (process.env.NODE_ENV === "test" || process.env.NODE_ENV === "development") &&
-    process.env.TEST_MODE === "true";
+    (process.env.TEST_MODE === "true" || process.env.REAL_STORAGE_TEST === "true");
 
   if (!isAllowed) {
     return new NextResponse("Not Found", { status: 404 });
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   const isAllowed =
     (process.env.NODE_ENV === "test" || process.env.NODE_ENV === "development") &&
-    process.env.TEST_MODE === "true";
+    (process.env.TEST_MODE === "true" || process.env.REAL_STORAGE_TEST === "true");
 
   if (!isAllowed) {
     return new NextResponse("Not Found", { status: 404 });

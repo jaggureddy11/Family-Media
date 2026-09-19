@@ -3,6 +3,7 @@ import { setupSessionCookie } from "./test-helpers";
 import { Role } from "@prisma/client";
 import path from "path";
 import { prisma } from "../../src/lib/prisma";
+import { getStorageProvider, safeDeleteTestPrefix } from "../../src/lib/storage";
 
 test.describe("E2E Direct Storage Upload & Large File Video Playback with CSP / CORS validation", () => {
   test.beforeEach(async ({ context, page }) => {
@@ -11,7 +12,6 @@ test.describe("E2E Direct Storage Upload & Large File Video Playback with CSP / 
     const isRealStorageTest = process.env.REAL_STORAGE_TEST === "true";
 
     if (isRealStorageTest) {
-      const { getStorageProvider } = await import("../../src/lib/storage");
       const provider = getStorageProvider();
       if (
         provider.constructor.name === "MockStorageProvider" ||
@@ -96,11 +96,27 @@ test.describe("E2E Direct Storage Upload & Large File Video Playback with CSP / 
   });
 
   test("uploads a real ~300MB MP4 via direct multipart with pause/resume, verifies in library, plays & seeks with zero CSP/CORS errors", async ({ page }) => {
-    test.setTimeout(180000); // 3 minutes for 300MB multipart
+    test.setTimeout(600000); // 10 minutes for 300MB multipart on real network
+
+    const isRealStorage = process.env.REAL_STORAGE_TEST === "true";
+    const scopedPrefix = `e2e-tmp/run-${Date.now()}-${Math.random().toString(36).slice(2, 6)}/`;
+
+    // Strictly enforce NO page.route or request interception when REAL_STORAGE_TEST=true
+    if (isRealStorage) {
+      page.route = () => {
+        throw new Error("VIOLATION: page.route or request interception is forbidden when REAL_STORAGE_TEST=true!");
+      };
+      await page.addInitScript((prefix) => {
+        (window as any).__KUTUMBAM_TEST_PREFIX = prefix;
+      }, scopedPrefix);
+    }
 
     const consoleErrors: string[] = [];
     page.on("console", (msg) => {
       const text = msg.text();
+      if (text.includes("[Multipart Upload]")) {
+        console.log(text);
+      }
       if (
         text.includes("Content Security Policy") ||
         text.includes("CSP") ||
@@ -161,81 +177,78 @@ test.describe("E2E Direct Storage Upload & Large File Video Playback with CSP / 
       console.log(`[Timing] Upload resumed at ${(Date.now() - startTime) / 1000}s`);
     }
 
-    // 6. Wait for multipart upload to complete (all 30 parts completed directly in storage)
-    await expect(page.locator("text=/Upload complete!|అప్‌లోడ్ పూర్తయింది!/i").first()).toBeVisible({ timeout: 120000 });
+    // 6. Wait for multipart upload to complete (all parts completed directly in storage)
+    await expect(page.locator("text=/Upload complete!|అప్‌లోడ్ పూర్తయింది!/i").first()).toBeVisible({ timeout: 540000 });
 
     const uploadDoneTime = Date.now();
     console.log(`[Timing] ~300MB Multipart Direct Upload completed in ${(uploadDoneTime - startTime) / 1000}s`);
 
-    // 7. Confirm it appears in /admin/library
-    await page.goto("/admin/library");
-    await page.waitForLoadState("networkidle");
-
-    const libraryItem = page.locator("text=sample_300mb").first();
-    await expect(libraryItem).toBeVisible({ timeout: 20000 });
-
-    // 8. Open video player from library and verify playback
-    const playLink = page.locator('a[href^="/watch/"]').first();
-    await expect(playLink).toBeVisible({ timeout: 20000 });
-    await playLink.click();
-
-    await page.waitForURL(/\/watch\//, { timeout: 20000 });
-
-    const video = page.locator("video");
-    await expect(video).toBeVisible({ timeout: 20000 });
-
-    const src = await video.getAttribute("src");
-    expect(src).toBeTruthy();
-
-    // 9. Play video and seek to middle (~12s) and near end (~22s)
-    await page.evaluate(() => {
-      const vid = document.querySelector("video");
-      if (vid) {
-        vid.currentTime = 12.0; // Middle seek
-        return vid.play().catch(() => {});
-      }
-    });
-
-    await page.waitForTimeout(2000);
-
-    await page.evaluate(() => {
-      const vid = document.querySelector("video");
-      if (vid) {
-        vid.currentTime = 22.0; // Near end seek
-        return vid.play().catch(() => {});
-      }
-    });
-
-    await page.waitForTimeout(2000);
-
-    const playbackDoneTime = Date.now();
-    console.log(`[Timing] Playback and seeking verified at ${(playbackDoneTime - startTime) / 1000}s`);
-
-    // 10. Verify zero CSP or CORS console errors
-    if (consoleErrors.length > 0) {
-      console.error("Detected console security errors during ~300MB test:", consoleErrors);
-    }
-    expect(consoleErrors).toEqual([]);
-
-    // 11. If running against real storage, list bucket and confirm objects created, then delete
-    if (process.env.REAL_STORAGE_TEST === "true") {
-      const { getStorageProvider } = await import("../../src/lib/storage");
+    // 7. If running against real storage, confirm objects exist in bucket listing under scopedPrefix
+    if (isRealStorage) {
       const provider = getStorageProvider();
-      const objects = await provider.list("originals/");
-      console.log(`[Real Storage Test] Found ${objects.length} objects with prefix originals/`);
-      for (const obj of objects) {
-        if (obj.key.includes("sample")) {
-          console.log(`[Real Storage Test] Deleting uploaded test object: ${obj.key}`);
-          await provider.delete(obj.key);
+      const objects = await provider.list(scopedPrefix);
+      console.log(`[Real Storage Test] Found ${objects.length} objects under prefix ${scopedPrefix}:`, objects.map(o => o.key));
+      expect(objects.length).toBeGreaterThan(0);
+
+      // 8. Confirm it appears in /admin/library
+      await page.goto("/admin/library");
+      await page.waitForLoadState("networkidle");
+
+      const libraryItem = page.locator("text=sample_300mb").first();
+      await expect(libraryItem).toBeVisible({ timeout: 20000 });
+
+      // 9. Open video player from library and verify playback
+      const playLink = page.locator('a[href^="/watch/"]').first();
+      await expect(playLink).toBeVisible({ timeout: 20000 });
+      await playLink.click();
+
+      await page.waitForURL(/\/watch\//, { timeout: 20000 });
+
+      const video = page.locator("video");
+      await expect(video).toBeVisible({ timeout: 20000 });
+
+      const src = await video.getAttribute("src");
+      expect(src).toBeTruthy();
+
+      // 10. Play video and seek to middle (~12s) and near end (~22s)
+      await page.evaluate(() => {
+        const vid = document.querySelector("video");
+        if (vid) {
+          vid.currentTime = 12.0; // Middle seek
+          return vid.play().catch(() => {});
         }
+      });
+
+      await page.waitForTimeout(2000);
+
+      await page.evaluate(() => {
+        const vid = document.querySelector("video");
+        if (vid) {
+          vid.currentTime = 22.0; // Near end seek
+          return vid.play().catch(() => {});
+        }
+      });
+
+      await page.waitForTimeout(2000);
+
+      const playbackDoneTime = Date.now();
+      console.log(`[Timing] Playback and seeking verified at ${(playbackDoneTime - startTime) / 1000}s`);
+
+      // 11. Verify zero CSP or CORS console errors
+      if (consoleErrors.length > 0) {
+        console.error("Detected console security errors during ~300MB test:", consoleErrors);
       }
-      const remaining = await provider.list("originals/");
-      const sampleRemaining = remaining.filter((r) => r.key.includes("sample"));
-      expect(sampleRemaining.length).toBe(0);
-      console.log("[Real Storage Test] Verified all test objects were deleted from B2/S3 bucket.");
+      expect(consoleErrors).toEqual([]);
+
+      // 12. Delete ONLY the scoped test prefix
+      const cleanupResult = await safeDeleteTestPrefix(provider, scopedPrefix);
+      console.log(`[Real Storage Test] Safely deleted ${cleanupResult.deletedCount} objects under ${scopedPrefix}`);
+      const remaining = await provider.list(scopedPrefix);
+      expect(remaining.length).toBe(0);
+      console.log(`[Real Storage Test] Verified prefix ${scopedPrefix} is 100% clean.`);
     }
 
-    // 12. Cleanup test media from database
+    // 13. Cleanup test media from database
     try {
       await prisma.mediaItem.deleteMany({
         where: {

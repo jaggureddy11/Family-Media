@@ -8,7 +8,7 @@ export default defineConfig({
   workers: 1,
   reporter: "list",
   use: {
-    baseURL: "http://localhost:3000",
+    baseURL: process.env.PLAYWRIGHT_BASE_URL || "http://localhost:3001",
     trace: "on-first-retry",
   },
   projects: [
@@ -30,9 +30,9 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "npm run dev",
-    port: 3000,
-    reuseExistingServer: true,
+    command: "PORT=3001 TEST_MODE=true USE_MOCK_DB=true npx next dev -p 3001",
+    port: 3001,
+    reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
   },
 });

@@ -3,6 +3,7 @@ import { S3StorageProvider } from "./s3-provider";
 import { MockStorageProvider } from "./mock-provider";
 
 export * from "./types";
+export * from "./safety";
 export { S3StorageProvider } from "./s3-provider";
 export { MockStorageProvider } from "./mock-provider";
 
@@ -103,7 +104,7 @@ export function getStorageInfo(): {
 } {
   const provider = getStorageProvider();
   const isMock =
-    provider.name === "MockStorage" ||
+    (provider as any).name === "MockStorage" ||
     provider.constructor.name === "MockStorageProvider";
   const endpoint =
     process.env.STORAGE_ENDPOINT ||

@@ -155,6 +155,9 @@ This guide walks you through setting up your local environment and connecting to
    NEXT_PUBLIC_HELP_CONTACT_NAME="Jaggu"
    NEXT_PUBLIC_HELP_PHONE_NUMBER="+919876543210"
    NEXT_PUBLIC_HELP_WHATSAPP_NUMBER="+919876543210"
+
+   # Site URL (Optional override; if omitted, derived automatically from request host/headers)
+   # SITE_URL="https://your-app-name.vercel.app"
    ```
 
 ---

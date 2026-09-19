@@ -93,6 +93,15 @@ If a design decision is a trade-off between power and simplicity, ALWAYS choose 
     - Media files (MP4, photos, documents) must never pass through or be buffered on the Next.js server (Vercel payload limit is ~4.5 MB).
     - Client browsers upload and download directly via S3/B2/R2 presigned URLs (single PUT for small files, multipart for large files).
     - API routes are strictly limited to auth, issuing presigned URLs, and lightweight JSON metadata.
+16. **TEST OBJECT SAFETY & SCOPED PREFIX**:
+    - Tests may only create and delete objects under a dedicated prefix (e.g. `e2e-tmp/<random>/`).
+    - Never list-and-delete the whole bucket, and never delete by a name pattern like "test" or "sample".
+    - Cleanup helpers must strictly refuse to delete any key outside that prefix.
+17. **REAL DATABASE SAFETY & SCOPED CLEANUP**:
+    - No test or script may call `deleteMany` without a `where` clause or execute drop/truncate tables against the real database.
+    - Real-DB verification scripts must tag their rows (e.g., names or IDs starting with `e2e-`) and delete only those tagged rows upon cleanup.
+    - Automated unit and E2E tests (with `TEST_MODE=true`) must run against `InMemoryDb` / mock database, strictly isolated from the real database.
+
 
 
 <!-- BEGIN:nextjs-agent-rules -->

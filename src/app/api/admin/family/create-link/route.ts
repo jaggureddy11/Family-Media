@@ -40,10 +40,20 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Derive host from request headers
-    const host = request.headers.get("host") || "localhost:3000";
-    const proto = request.headers.get("x-forwarded-proto") || "http";
-    const linkUrl = `${proto}://${host}/link/${rawToken}`;
+    // Derive origin from SITE_URL env var or real request headers (never hardcode localhost)
+    const configuredSiteUrl = process.env.SITE_URL || process.env.NEXT_PUBLIC_SITE_URL;
+    let origin = configuredSiteUrl?.replace(/\/+$/, "");
+
+    if (!origin) {
+      const forwardedHost = request.headers.get("x-forwarded-host");
+      const host = forwardedHost || request.headers.get("host") || request.nextUrl.host;
+      const proto =
+        request.headers.get("x-forwarded-proto") ||
+        (host && (host.startsWith("localhost") || host.startsWith("127.0.0.1")) ? "http" : "https");
+      origin = `${proto}://${host}`;
+    }
+
+    const linkUrl = `${origin}/link/${rawToken}`;
 
     // Generate QR code data URL
     const qrDataUrl = await QRCode.toDataURL(linkUrl, {

@@ -75,6 +75,12 @@ export default function AdminDevicesPage() {
           <Bi k="familyMembers" />
         </Link>
       }
+      navItems={[
+        { key: "library", href: "/admin/library" },
+        { key: "uploadMedia", href: "/admin/upload" },
+        { key: "familyMembers", href: "/admin/family" },
+        { key: "installGuide", href: "/admin/install" },
+      ]}
     >
       <div className="flex flex-col gap-8 pb-16">
         <h2 className="text-[var(--text-heading)] font-bold text-white border-b-4 border-[var(--border-subtle)] pb-3">

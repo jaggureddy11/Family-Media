@@ -291,6 +291,10 @@ export const STRINGS = {
     en: "Active Devices",
     te: "యాక్టివ్ పరికరాలు",
   },
+  installGuide: {
+    en: "Install Guide",
+    te: "ఇన్‌స్టాల్ గైడ్",
+  },
   signOutDevice: {
     en: "Sign out this device",
     te: "ఈ పరికరాన్ని సైన్ అవుట్ చేయండి",

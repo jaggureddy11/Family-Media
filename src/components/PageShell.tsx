@@ -69,7 +69,7 @@ export const PageShell: React.FC<PageShellProps> = ({
     whatsappNumber: "+919876543210",
   });
 
-  // Fetch help settings on mount
+  // Fetch help settings and profile preferences on mount
   React.useEffect(() => {
     fetch("/api/settings")
       .then((res) => res.json())
@@ -80,6 +80,24 @@ export const PageShell: React.FC<PageShellProps> = ({
             phoneNumber: data.helpPhoneNumber || "+919876543210",
             whatsappNumber: data.helpWhatsappNumber || "+919876543210",
           });
+        }
+      })
+      .catch(() => {});
+
+    // Hydrate per-profile text scale and high contrast theme
+    fetch("/api/auth/session")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.user) {
+          if (data.user.textSize) {
+            const scale = data.user.textSize.toLowerCase().replace(/_/g, "-");
+            document.documentElement.setAttribute("data-text-scale", scale);
+          }
+          if (data.user.highContrast) {
+            document.documentElement.setAttribute("data-theme", "high-contrast");
+          } else if (document.documentElement.getAttribute("data-theme") === "high-contrast") {
+            document.documentElement.setAttribute("data-theme", "dark");
+          }
         }
       })
       .catch(() => {});
