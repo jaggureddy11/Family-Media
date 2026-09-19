@@ -319,6 +319,8 @@ export async function getDefaultMomSession(): Promise<AuthenticatedSession> {
         name_en: "Amma",
         name_te: "అమ్మా",
         role: Role.ADMIN,
+        avatarKey: null,
+        pinHash: null,
         textSize: "EXTRA_LARGE",
         highContrast: false,
         createdAt: new Date(),

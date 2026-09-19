@@ -145,7 +145,6 @@ export const PageShell: React.FC<PageShellProps> = ({
         router.back();
       }
     },
-    onSelect: () => {},
   });
 
   const handleBackClick = () => {
