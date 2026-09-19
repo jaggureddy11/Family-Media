@@ -91,16 +91,16 @@ test.describe("Milestone 3: Storage, Uploads & Library Management", () => {
     }
   });
 
-  test("admin upload page displays HandBrake conversion notice when non-browser-playable MKV file is added", async ({
+  test("admin upload page accepts MKV and high-res video files without HandBrake restriction", async ({
     page,
-  }, testInfo) => {
+  }) => {
     await page.goto("/admin/upload");
 
     // 1. Verify upload page loaded
     await expect(page.getByRole("heading", { name: /Upload Media.*మీడియాను అప్‌లోడ్ చేయండి/i })).toBeVisible();
     await expect(page.getByText(/Drag and drop files here/i)).toBeVisible();
 
-    // 2. Select an unsupported MKV file
+    // 2. Select an MKV file
     const fileInput = page.locator('input[type="file"]').first();
     await fileInput.setInputFiles({
       name: "classic_movie_archive.mkv",
@@ -108,29 +108,16 @@ test.describe("Milestone 3: Storage, Uploads & Library Management", () => {
       buffer: Buffer.from("dummy-mkv-video-content-here"),
     });
 
-    // 3. Verify item is parsed and added to the queue
+    // 3. Verify item is parsed and added to the queue with title auto-extracted
     const titleInput = page.locator('input[type="text"]').first();
     await expect(titleInput).toHaveValue("Classic Movie Archive", { timeout: 5000 });
 
-    // 4. Verify HandBrake warning banner appears with exact required text
+    // 4. Verify HandBrake warning banner does NOT appear
     const handbrakeAlert = page.getByRole("alert").filter({ hasText: /Video Needs Conversion/i });
-    await expect(handbrakeAlert).toBeVisible({ timeout: 5000 });
+    await expect(handbrakeAlert).toHaveCount(0);
 
-    await expect(
-      page.getByText(/Convert this with HandBrake, preset Fast 720p30, then upload again/i)
-    ).toBeVisible();
-    await expect(
-      page.getByText(/ఈ వీడియో బ్రౌజర్‌లో నేరుగా ప్లే అవ్వదు/i)
-    ).toBeVisible();
-
-    // Scroll alert into view and capture screenshot
-    if (testInfo.project.name === "mobile-390px") {
-      await handbrakeAlert.scrollIntoViewIfNeeded();
-      await page.screenshot({ path: "tests/screenshots/admin-upload-handbrake.png", fullPage: false });
-    }
-
-    // 5. Verify direct upload button is omitted because conversion is required
-    const uploadBtn = page.getByRole("button", { name: /^Upload Media.*అప్‌లోడ్ చేయండి$/i });
-    await expect(uploadBtn).toHaveCount(0);
+    // 5. Verify direct upload button is available and visible
+    const uploadBtn = page.getByRole("button", { name: /Upload Media.*అప్‌లోడ్ చేయండి/i });
+    await expect(uploadBtn).toBeVisible();
   });
 });

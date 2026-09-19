@@ -122,17 +122,6 @@ export default function AdminUploadPage() {
       // 2. Video Inspection
       if (type === "MOVIE" || type === "FAMILY_VIDEO") {
         const videoRes = await inspectAndExtractVideo(file);
-        if (videoRes.handbrakeRequired) {
-          updateQueueItem(id, {
-            status: "ready",
-            checksum,
-            isDuplicate,
-            handbrakeRequired: true,
-            handbrakeMessage: videoRes.errorMessage,
-          });
-          return;
-        }
-
         updateQueueItem(id, {
           status: "ready",
           checksum,
@@ -202,8 +191,6 @@ export default function AdminUploadPage() {
   };
 
   const startUpload = async (item: UploadFileQueueItem) => {
-    if (item.handbrakeRequired) return;
-
     setActiveUploadId(item.id);
     updateQueueItem(item.id, { status: "uploading", progress: item.progress || 5, errorMessage: undefined });
 
@@ -556,23 +543,6 @@ export default function AdminUploadPage() {
                   key={item.id}
                   className="bg-[var(--bg-surface-elevated)] border-4 border-[var(--border-thick)] rounded-3xl p-6 sm:p-8 space-y-6 transition-all"
                 >
-                  {/* HandBrake Notice Banner */}
-                  {item.handbrakeRequired && (
-                    <div
-                      role="alert"
-                      className="p-6 bg-amber-950/80 border-4 border-amber-500 rounded-2xl flex flex-col sm:flex-row gap-5 items-start sm:items-center text-white"
-                    >
-                      <AlertTriangle className="w-12 h-12 text-amber-400 shrink-0 mt-1 sm:mt-0" />
-                      <div className="space-y-2 flex-1">
-                        <div className="text-[var(--text-body)] font-bold text-amber-300">
-                          <Bi k="handbrakeNoticeTitle" />
-                        </div>
-                        <div className="text-[var(--text-body)] leading-relaxed">
-                          <Bi k="handbrakeNoticeDesc" />
-                        </div>
-                      </div>
-                    </div>
-                  )}
 
                   {/* Duplicate Notice */}
                   {item.isDuplicate && (
@@ -671,7 +641,7 @@ export default function AdminUploadPage() {
                     </div>
 
                     <div className="flex items-center gap-4">
-                      {item.status === "ready" && !item.handbrakeRequired && (
+                      {item.status === "ready" && (
                         <BigButton
                           k="uploadMedia"
                           variant="accent"

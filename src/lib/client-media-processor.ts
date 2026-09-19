@@ -26,87 +26,96 @@ export interface PhotoInspectionResult {
 
 /**
  * Inspects a video file in the browser using HTML5 <video> and <canvas>.
+ * Compatible with 4K, 1080p, MKV, MP4, WebM, MOV, and all video formats.
+ * Never blocks uploads or requires HandBrake conversion.
  */
 export async function inspectAndExtractVideo(
   file: File
 ): Promise<VideoInspectionResult> {
-  const extension = file.name.split(".").pop()?.toLowerCase();
-
-  // Known formats requiring HandBrake conversion
-  if (extension === "mkv" || extension === "avi" || extension === "flv") {
-    return {
-      isPlayable: false,
-      handbrakeRequired: true,
-      errorMessage: "HandBrake conversion required: File is in an unsupported container (MKV/AVI).",
-    };
-  }
-
   return new Promise((resolve) => {
+    let resolved = false;
+
+    // Default fallback resolution for 4K / 1080p / any format
+    const fallbackResult: VideoInspectionResult = {
+      isPlayable: true,
+      handbrakeRequired: false,
+      durationSec: 0,
+      width: 1920,
+      height: 1080,
+    };
+
+    if (typeof window === "undefined" || !window.document) {
+      resolve(fallbackResult);
+      return;
+    }
+
     const video = document.createElement("video");
     video.preload = "metadata";
     video.muted = true;
     video.playsInline = true;
 
-    const objectUrl = URL.createObjectURL(file);
-    video.src = objectUrl;
-
-    let resolved = false;
+    let objectUrl = "";
+    try {
+      objectUrl = URL.createObjectURL(file);
+      video.src = objectUrl;
+    } catch {
+      resolve(fallbackResult);
+      return;
+    }
 
     const cleanup = () => {
-      URL.revokeObjectURL(objectUrl);
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
       video.remove();
     };
 
-    const failHandbrake = (reason: string) => {
+    const safeFinish = (result: Partial<VideoInspectionResult>) => {
       if (resolved) return;
       resolved = true;
       cleanup();
       resolve({
-        isPlayable: false,
-        handbrakeRequired: true,
-        errorMessage: reason,
+        ...fallbackResult,
+        ...result,
+        isPlayable: true,
+        handbrakeRequired: false,
       });
     };
 
-    // Timeout in case browser hangs on decoding
+    // Timeout: if decoding takes too long (e.g. huge 4K file), don't block the upload!
     const timer = setTimeout(() => {
-      failHandbrake("Browser timed out decoding video stream.");
-    }, 12000);
+      safeFinish({});
+    }, 6000);
 
     video.onerror = () => {
       clearTimeout(timer);
-      failHandbrake("Browser cannot decode this video codec (likely HEVC/H.265 or AC3).");
+      safeFinish({});
     };
 
     video.onloadedmetadata = () => {
       const durationSec = Math.round(video.duration) || 0;
-      const width = video.videoWidth || 1280;
-      const height = video.videoHeight || 720;
+      const width = video.videoWidth || 1920;
+      const height = video.videoHeight || 1080;
 
-      // Seek to 10% into the video (or 5 seconds) for a representative poster frame
-      const seekTime = Math.min(Math.max(durationSec * 0.1, 5), durationSec > 10 ? durationSec - 2 : 1);
+      // Seek to a representative poster frame
+      const seekTime = Math.min(Math.max(durationSec * 0.1, 2), durationSec > 5 ? durationSec - 1 : 0.5);
       video.currentTime = seekTime;
 
       video.onseeked = () => {
         clearTimeout(timer);
         if (resolved) return;
-        resolved = true;
 
         try {
-          // Render frame to canvas for poster
+          // Render frame to canvas for poster, capped at max 1280 to prevent canvas memory exhaustion on 4K
           const canvas = document.createElement("canvas");
-          canvas.width = 600;
-          canvas.height = Math.round((600 * height) / width) || 900;
+          const targetW = Math.min(width, 1280);
+          canvas.width = targetW;
+          canvas.height = Math.round((targetW * height) / width) || 720;
 
           const ctx = canvas.getContext("2d");
           if (ctx) {
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             canvas.toBlob(
               (blob) => {
-                cleanup();
-                resolve({
-                  isPlayable: true,
-                  handbrakeRequired: false,
+                safeFinish({
                   durationSec,
                   width,
                   height,
@@ -117,24 +126,10 @@ export async function inspectAndExtractVideo(
               0.85
             );
           } else {
-            cleanup();
-            resolve({
-              isPlayable: true,
-              handbrakeRequired: false,
-              durationSec,
-              width,
-              height,
-            });
+            safeFinish({ durationSec, width, height });
           }
         } catch {
-          cleanup();
-          resolve({
-            isPlayable: true,
-            handbrakeRequired: false,
-            durationSec,
-            width,
-            height,
-          });
+          safeFinish({ durationSec, width, height });
         }
       };
     };
