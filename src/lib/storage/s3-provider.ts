@@ -18,6 +18,8 @@ export interface S3ProviderConfig {
   secretAccessKey: string;
   bucketName: string;
   endpoint?: string;
+  region?: string;
+  forcePathStyle?: boolean;
   publicDomain?: string;
 }
 
@@ -37,8 +39,9 @@ export class S3StorageProvider implements StorageProvider {
         : undefined);
 
     this.client = new S3Client({
-      region: "auto",
+      region: config.region || "auto",
       endpoint,
+      forcePathStyle: config.forcePathStyle ?? true,
       credentials: {
         accessKeyId: config.accessKeyId,
         secretAccessKey: config.secretAccessKey,

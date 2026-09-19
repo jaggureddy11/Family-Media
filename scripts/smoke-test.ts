@@ -9,6 +9,7 @@
  * 5. Cleanup of Test Objects
  */
 
+import "dotenv/config";
 import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
@@ -18,10 +19,11 @@ async function runSmokeTest() {
   console.log("================================================================================\n");
 
   const databaseUrl = process.env.DATABASE_URL;
-  const accountId = process.env.R2_ACCOUNT_ID;
-  const accessKeyId = process.env.R2_ACCESS_KEY_ID;
-  const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
-  const bucketName = process.env.R2_BUCKET_NAME;
+  const accessKeyId = process.env.R2_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID;
+  const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY;
+  const endpoint = process.env.R2_ENDPOINT || process.env.AWS_ENDPOINT_URL_S3;
+  const region = process.env.R2_REGION || process.env.AWS_REGION || "us-east-2";
+  const bucketName = process.env.R2_BUCKET_NAME || process.env.AWS_BUCKET_NAME || "assets";
 
   let allPassed = true;
 
@@ -33,23 +35,22 @@ async function runSmokeTest() {
     console.log("  ✅ DATABASE_URL: Configured (PostgreSQL/Neon).");
   }
 
-  const hasR2 = accountId && accessKeyId && secretAccessKey && bucketName;
-  if (!hasR2) {
-    console.log("  ⚠️  Cloudflare R2 storage credentials not fully present in environment.");
-    console.log("      (R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET_NAME)\n");
+  const hasStorage = accessKeyId && secretAccessKey && (endpoint || process.env.R2_ACCOUNT_ID);
+  if (!hasStorage) {
+    console.log("  ⚠️  Storage credentials not fully present in environment.");
     console.log("  [INFO] Running in simulated smoke test mode.");
   } else {
-    console.log(`  ✅ Cloudflare R2: Configured for bucket "${bucketName}".`);
+    console.log(`  ✅ Storage (S3/Neon/R2): Configured for bucket "${bucketName}" at ${endpoint || "R2"}.`);
   }
 
-  // Step 2: Test Storage Operations (Real R2 or Simulated)
+  // Step 2: Test Storage Operations (Real S3/Neon/R2 or Simulated)
   console.log("\n[Step 2] Testing Media Upload & Signed URL Pipeline...");
 
-  if (hasR2) {
-    const endpoint = process.env.R2_ENDPOINT || `https://${accountId}.r2.cloudflarestorage.com`;
+  if (hasStorage) {
     const s3 = new S3Client({
-      region: "auto",
+      region,
       endpoint,
+      forcePathStyle: true,
       credentials: {
         accessKeyId: accessKeyId!,
         secretAccessKey: secretAccessKey!,
