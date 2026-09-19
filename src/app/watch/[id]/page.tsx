@@ -425,19 +425,6 @@ export default function WatchPlayerPage() {
       onClick={resetControlsTimer}
       className="relative w-screen h-screen bg-black text-white overflow-hidden select-none flex items-center justify-center"
     >
-      {/* Persistent Top-Left Back Button (Always accessible so Mom never gets trapped) */}
-      <div className="absolute top-4 left-4 z-40">
-        <button
-          type="button"
-          onClick={() => router.push("/movies")}
-          className="kutumbam-focus min-h-[64px] sm:min-h-[76px] px-5 sm:px-7 bg-black/80 hover:bg-black border-4 border-white text-white rounded-2xl flex items-center gap-3 text-[var(--text-btn)] font-bold shadow-2xl transition-transform active:scale-95"
-          data-nav-item="true"
-        >
-          <ArrowLeft className="w-8 h-8" />
-          <Bi k="back" />
-        </button>
-      </div>
-
       {/* Loading state */}
       {loading && (
         <div className="flex flex-col items-center gap-6 z-30">
@@ -450,7 +437,7 @@ export default function WatchPlayerPage() {
 
       {/* Playback Error Screen */}
       {playbackError && (
-        <div className="z-40 p-6 sm:p-12 max-w-2xl bg-zinc-950 border-6 border-red-500 rounded-3xl text-center space-y-8 shadow-2xl">
+        <div className="z-40 p-6 sm:p-12 max-w-2xl bg-zinc-950 border-6 border-red-500 rounded-3xl text-center space-y-8 shadow-2xl mx-4">
           <div className="text-red-400 text-6xl">⚠️</div>
           <h2 className="text-[var(--text-heading)] font-extrabold text-white">
             <Bi k="playbackFailed" />
@@ -469,6 +456,7 @@ export default function WatchPlayerPage() {
           src={mediaData.urls.videoUrl}
           poster={mediaData.urls.posterUrl || undefined}
           playsInline
+          controls={false}
           crossOrigin="anonymous"
           onLoadedMetadata={handleLoadedMetadata}
           onTimeUpdate={() => {
@@ -496,18 +484,28 @@ export default function WatchPlayerPage() {
       {/* Controls Overlay (Auto-hides after 3s when playing) */}
       {!loading && !playbackError && !isEnded && (
         <div
-          className={`absolute inset-0 z-30 pointer-events-none transition-opacity duration-300 flex flex-col justify-between p-4 sm:p-8 bg-gradient-to-t from-black/90 via-transparent to-black/80 ${
+          className={`absolute inset-0 z-30 pointer-events-none transition-opacity duration-300 flex flex-col justify-between p-3 sm:p-8 bg-gradient-to-t from-black/95 via-transparent to-black/85 ${
             showControls ? "opacity-100" : "opacity-0"
           }`}
         >
-          {/* Top Bar: Title info */}
-          <div className="flex items-center justify-between pointer-events-auto pl-36 pr-4 pt-2">
+          {/* Top Bar: Back Button & Title Info */}
+          <div className="flex items-center justify-between gap-3 pointer-events-auto w-full pt-1 sm:pt-2">
+            <button
+              type="button"
+              onClick={() => router.push("/movies")}
+              className="kutumbam-focus min-h-[52px] sm:min-h-[72px] px-4 sm:px-6 bg-black/80 hover:bg-black border-4 border-white text-white rounded-2xl flex items-center gap-2 sm:gap-3 text-base sm:text-[var(--text-btn)] font-bold shadow-2xl transition-transform active:scale-95 shrink-0"
+              data-nav-item="true"
+            >
+              <ArrowLeft className="w-6 h-6 sm:w-8 sm:h-8" />
+              <Bi k="back" />
+            </button>
+
             {mediaData && (
-              <div className="space-y-1">
-                <h1 className="text-[var(--text-heading)] font-bold text-white drop-shadow-md">
+              <div className="text-right truncate flex-1 min-w-0 pl-2">
+                <h1 className="text-base sm:text-[var(--text-heading)] font-bold text-white drop-shadow-md truncate">
                   {mediaData.media.titleEn}
                 </h1>
-                <div className="text-[var(--text-body)] font-bold text-yellow-300 drop-shadow-md font-sans">
+                <div className="text-xs sm:text-[var(--text-body)] font-bold text-yellow-300 drop-shadow-md font-sans truncate">
                   {mediaData.media.titleTe}
                 </div>
               </div>
@@ -515,31 +513,31 @@ export default function WatchPlayerPage() {
           </div>
 
           {/* Center Play/Pause & 10s Skip Giant Buttons */}
-          <div className="flex items-center justify-center gap-6 sm:gap-12 pointer-events-auto my-auto">
+          <div className="flex items-center justify-center gap-4 sm:gap-12 pointer-events-auto my-auto">
             {/* Back 10s Button */}
             <button
               type="button"
               onClick={() => seekBy(-10)}
-              className="kutumbam-focus min-h-[84px] sm:min-h-[96px] min-w-[84px] sm:min-w-[96px] p-5 rounded-full bg-black/80 hover:bg-zinc-800 border-4 border-white text-white flex flex-col items-center justify-center shadow-xl active:scale-90"
+              className="kutumbam-focus min-h-[64px] sm:min-h-[96px] min-w-[64px] sm:min-w-[96px] p-3 sm:p-5 rounded-full bg-black/80 hover:bg-zinc-800 border-4 border-white text-white flex flex-col items-center justify-center shadow-xl active:scale-90"
               data-nav-item="true"
               aria-label="Back 10s · 10 సెకన్లు వెనుకకు"
             >
-              <RotateCcw className="w-10 h-10 sm:w-12 sm:h-12" />
-              <span className="text-[var(--text-min)] font-extrabold mt-1">10s</span>
+              <RotateCcw className="w-7 h-7 sm:w-12 sm:h-12" />
+              <span className="text-xs sm:text-[var(--text-min)] font-extrabold mt-0.5 sm:mt-1">10s</span>
             </button>
 
             {/* Giant Play/Pause Button */}
             <button
               type="button"
               onClick={togglePlay}
-              className="kutumbam-focus min-h-[104px] sm:min-h-[128px] min-w-[104px] sm:min-w-[128px] p-6 rounded-full bg-[var(--accent)] hover:bg-yellow-300 border-6 border-white text-black flex items-center justify-center shadow-2xl active:scale-95 transition-transform"
+              className="kutumbam-focus min-h-[84px] sm:min-h-[128px] min-w-[84px] sm:min-w-[128px] p-4 sm:p-6 rounded-full bg-[var(--accent)] hover:bg-yellow-300 border-4 sm:border-6 border-white text-black flex items-center justify-center shadow-2xl active:scale-95 transition-transform"
               data-nav-item="true"
               aria-label={isPlaying ? "Pause · పాజ్" : "Play · ప్లే"}
             >
               {isPlaying ? (
-                <Pause className="w-16 h-16 sm:w-20 sm:h-20 fill-current" />
+                <Pause className="w-10 h-10 sm:w-20 sm:h-20 fill-current" />
               ) : (
-                <Play className="w-16 h-16 sm:w-20 sm:h-20 fill-current ml-2" />
+                <Play className="w-10 h-10 sm:w-20 sm:h-20 fill-current ml-1 sm:ml-2" />
               )}
             </button>
 
@@ -547,17 +545,17 @@ export default function WatchPlayerPage() {
             <button
               type="button"
               onClick={() => seekBy(10)}
-              className="kutumbam-focus min-h-[84px] sm:min-h-[96px] min-w-[84px] sm:min-w-[96px] p-5 rounded-full bg-black/80 hover:bg-zinc-800 border-4 border-white text-white flex flex-col items-center justify-center shadow-xl active:scale-90"
+              className="kutumbam-focus min-h-[64px] sm:min-h-[96px] min-w-[64px] sm:min-w-[96px] p-3 sm:p-5 rounded-full bg-black/80 hover:bg-zinc-800 border-4 border-white text-white flex flex-col items-center justify-center shadow-xl active:scale-90"
               data-nav-item="true"
               aria-label="Forward 10s · 10 సెకన్లు ముందుకు"
             >
-              <RotateCw className="w-10 h-10 sm:w-12 sm:h-12" />
-              <span className="text-[var(--text-min)] font-extrabold mt-1">10s</span>
+              <RotateCw className="w-7 h-7 sm:w-12 sm:h-12" />
+              <span className="text-xs sm:text-[var(--text-min)] font-extrabold mt-0.5 sm:mt-1">10s</span>
             </button>
           </div>
 
           {/* Bottom Bar: Seek Bar, Big Digits, Subtitles & Fullscreen */}
-          <div className="space-y-4 pointer-events-auto bg-black/70 p-4 sm:p-6 rounded-3xl border-2 border-zinc-800">
+          <div className="space-y-3 sm:space-y-4 pointer-events-auto bg-black/80 backdrop-blur-md p-3 sm:p-6 rounded-2xl sm:rounded-3xl border-2 border-zinc-800">
             {/* Thick Seek Bar (>= 24px) */}
             <div className="flex items-center gap-4">
               <input
@@ -566,27 +564,27 @@ export default function WatchPlayerPage() {
                 max={duration || 100}
                 value={currentTime}
                 onChange={handleSeekChange}
-                className="w-full h-8 sm:h-9 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-yellow-400 border-2 border-zinc-500 focus:outline-none focus:ring-4 focus:ring-yellow-400"
+                className="w-full h-7 sm:h-9 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-yellow-400 border-2 border-zinc-500 focus:outline-none focus:ring-4 focus:ring-yellow-400"
                 aria-label="Seek video · సమయం ఎంచుకోండి"
               />
             </div>
 
-            {/* Large Digits (>= 40px) & Right-hand Action Controls */}
-            <div className="flex flex-wrap items-center justify-between gap-4">
+            {/* Large Digits & Right-hand Action Controls */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               {/* Large Digits */}
-              <div className="text-[var(--text-heading)] font-extrabold font-mono text-yellow-300 tracking-wider">
+              <div className="text-base sm:text-[var(--text-heading)] font-extrabold font-mono text-yellow-300 tracking-wider">
                 <span>{formatTime(currentTime)}</span>
-                <span className="text-zinc-500 mx-3">/</span>
+                <span className="text-zinc-500 mx-2 sm:mx-3">/</span>
                 <span className="text-zinc-300">{formatTime(duration)}</span>
               </div>
 
               {/* Action Controls: Subtitles Toggle & Fullscreen */}
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 sm:gap-4">
                 {/* Subtitles Toggle Button */}
                 <button
                   type="button"
                   onClick={toggleSubtitles}
-                  className={`kutumbam-focus min-h-[64px] px-6 rounded-2xl border-4 font-bold flex items-center gap-3 transition-all ${
+                  className={`kutumbam-focus min-h-[48px] sm:min-h-[64px] px-4 sm:px-6 rounded-xl sm:rounded-2xl border-4 font-bold flex items-center gap-2 sm:gap-3 transition-all flex-1 sm:flex-initial justify-center ${
                     subtitlesActive
                       ? "bg-yellow-400 text-black border-white shadow-lg"
                       : "bg-zinc-800 text-zinc-300 border-zinc-600 hover:border-zinc-400"
@@ -594,8 +592,8 @@ export default function WatchPlayerPage() {
                   data-nav-item="true"
                   aria-label="Toggle subtitles · ఉపశీర్షికలు"
                 >
-                  <Subtitles className="w-8 h-8" />
-                  <span className="text-[var(--text-btn)]">
+                  <Subtitles className="w-5 h-5 sm:w-8 sm:h-8 shrink-0" />
+                  <span className="text-xs sm:text-[var(--text-btn)]">
                     <Bi k={subtitlesActive ? "subtitlesOn" : "subtitlesOff"} />
                   </span>
                 </button>
@@ -604,16 +602,16 @@ export default function WatchPlayerPage() {
                 <button
                   type="button"
                   onClick={toggleFullscreen}
-                  className="kutumbam-focus min-h-[64px] px-6 rounded-2xl bg-zinc-800 hover:bg-zinc-700 border-4 border-zinc-500 text-white font-bold flex items-center gap-3"
+                  className="kutumbam-focus min-h-[48px] sm:min-h-[64px] px-4 sm:px-6 rounded-xl sm:rounded-2xl bg-zinc-800 hover:bg-zinc-700 border-4 border-zinc-500 text-white font-bold flex items-center gap-2 sm:gap-3 flex-1 sm:flex-initial justify-center"
                   data-nav-item="true"
                   aria-label="Fullscreen · పూర్తి స్క్రీన్"
                 >
                   {isFullscreen ? (
-                    <Minimize className="w-8 h-8" />
+                    <Minimize className="w-5 h-5 sm:w-8 sm:h-8 shrink-0" />
                   ) : (
-                    <Maximize className="w-8 h-8" />
+                    <Maximize className="w-5 h-5 sm:w-8 sm:h-8 shrink-0" />
                   )}
-                  <span className="text-[var(--text-btn)]">
+                  <span className="text-xs sm:text-[var(--text-btn)]">
                     <Bi k="fullscreen" />
                   </span>
                 </button>
