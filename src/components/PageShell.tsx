@@ -11,8 +11,14 @@ import { STRINGS } from "@/lib/strings";
 export interface PageShellProps {
   /** Page heading */
   title?: { en: string; te: string };
+  /** Explicit English title */
+  titleEn?: string;
+  /** Explicit Telugu title */
+  titleTe?: string;
   /** Key from STRINGS glossary for heading */
   titleKey?: keyof typeof STRINGS;
+  /** Alias for titleKey */
+  titleStringKey?: keyof typeof STRINGS;
   /** Whether to show the Back button (default true) */
   showBack?: boolean;
   /** Whether to show the Home button (default true) */
@@ -40,7 +46,10 @@ export interface PageShellProps {
  */
 export const PageShell: React.FC<PageShellProps> = ({
   title,
+  titleEn,
+  titleTe,
   titleKey,
+  titleStringKey,
   showBack = true,
   showHome = true,
   backHref,
@@ -51,9 +60,57 @@ export const PageShell: React.FC<PageShellProps> = ({
   contentClassName = "",
 }) => {
   const router = useRouter();
+  const effectiveTitle = title || (titleEn && titleTe ? { en: titleEn, te: titleTe } : undefined);
+  const effectiveTitleKey = titleKey || titleStringKey;
   const [showHelpModal, setShowHelpModal] = useState(false);
+  const [helpInfo, setHelpInfo] = useState({
+    contactName: "Family Admin",
+    phoneNumber: "+919876543210",
+    whatsappNumber: "+919876543210",
+  });
 
-  // Initialize spatial navigation hook
+  // Fetch help settings on mount
+  React.useEffect(() => {
+    fetch("/api/settings")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.helpContactName) {
+          setHelpInfo({
+            contactName: data.helpContactName,
+            phoneNumber: data.helpPhoneNumber || "+919876543210",
+            whatsappNumber: data.helpWhatsappNumber || "+919876543210",
+          });
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  // Idle timeout (4 hours) return quietly to Home
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const IDLE_LIMIT_MS = 4 * 60 * 60 * 1000; // 4 hours
+    let idleTimer: NodeJS.Timeout;
+
+    const resetIdle = () => {
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => {
+        if (window.location.pathname !== "/") {
+          router.push("/");
+        }
+      }, IDLE_LIMIT_MS);
+    };
+
+    resetIdle();
+    const events = ["mousedown", "mousemove", "keydown", "touchstart", "scroll"];
+    events.forEach((ev) => window.addEventListener(ev, resetIdle, { passive: true }));
+
+    return () => {
+      clearTimeout(idleTimer);
+      events.forEach((ev) => window.removeEventListener(ev, resetIdle));
+    };
+  }, [router]);
+
+  // Spatial navigation hook
   useSpatialNavigation({
     onBack: () => {
       if (showHelpModal) {
@@ -74,9 +131,9 @@ export const PageShell: React.FC<PageShellProps> = ({
     }
   };
 
-  const helpContactName = process.env.NEXT_PUBLIC_HELP_CONTACT_NAME || "Family Admin";
-  const helpPhoneNumber = process.env.NEXT_PUBLIC_HELP_PHONE_NUMBER || "+919876543210";
-  const helpWhatsApp = process.env.NEXT_PUBLIC_HELP_WHATSAPP_NUMBER || "+919876543210";
+  const helpContactName = helpInfo.contactName;
+  const helpPhoneNumber = helpInfo.phoneNumber;
+  const helpWhatsApp = helpInfo.whatsappNumber;
 
   return (
     <div className="min-h-screen flex flex-col bg-[var(--bg-main)] text-[var(--text-primary)]">
@@ -120,11 +177,11 @@ export const PageShell: React.FC<PageShellProps> = ({
           </div>
 
           {/* Heading (if provided) */}
-          {(title || titleKey) && (
+          {(effectiveTitle || effectiveTitleKey) && (
             <h1 className="w-full sm:w-auto sm:flex-1 text-[var(--text-heading)] font-bold text-center order-last sm:order-none px-2 mt-2 sm:mt-0">
               <Bi
-                text={title}
-                k={titleKey}
+                text={effectiveTitle}
+                k={effectiveTitleKey}
                 layout="auto"
                 enClassName="text-[0.85em] text-[var(--text-secondary)]"
                 teClassName="text-[1.05em] text-[var(--accent)]"

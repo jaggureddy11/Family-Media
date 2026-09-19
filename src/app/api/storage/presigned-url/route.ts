@@ -3,9 +3,12 @@ import { getSession } from "@/lib/auth";
 import { getStorageProvider } from "@/lib/storage";
 
 export async function POST(request: NextRequest) {
-  const session = await getSession();
-  if (!session || session.user.role !== "ADMIN") {
+  const session = await getSession(request);
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (session.user.role !== "ADMIN") {
+    return NextResponse.json({ error: "Forbidden: Admin access required" }, { status: 403 });
   }
 
   try {

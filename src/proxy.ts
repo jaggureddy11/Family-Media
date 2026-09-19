@@ -20,9 +20,10 @@ const PUBLIC_PATHS = [
 
 function getR2Origin(): string {
   const endpoint =
-    process.env.STORAGE_ENDPOINT ||
     process.env.R2_ENDPOINT ||
-    process.env.R2_PUBLIC_DOMAIN;
+    (process.env.R2_ACCOUNT_ID
+      ? `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`
+      : "");
   if (!endpoint) return "";
   try {
     const parsed = new URL(endpoint.startsWith("http") ? endpoint : `https://${endpoint}`);

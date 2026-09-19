@@ -603,12 +603,40 @@ class InMemoryDb {
       },
     };
   }
+
+  get systemSetting() {
+    return {
+      findUnique: async ({ where }: any) => {
+        return this.systemSettings.find((s) => s.key === where.key) || null;
+      },
+      findMany: async () => {
+        return [...this.systemSettings];
+      },
+      upsert: async ({ where, create, update }: any) => {
+        const existing = this.systemSettings.find((s) => s.key === where.key);
+        if (existing) {
+          Object.assign(existing, update, { updatedAt: new Date() });
+          return existing;
+        }
+        const created = {
+          key: where.key,
+          value: create.value,
+          updatedAt: new Date(),
+        };
+        this.systemSettings.push(created);
+        return created;
+      },
+    };
+  }
 }
 
-// In production (NODE_ENV=production or on Vercel), in-memory Prisma is strictly disabled
+// In production (NODE_ENV=production or on Vercel), in-memory Prisma is strictly disabled at runtime
 const isProduction = process.env.NODE_ENV === "production" || process.env.VERCEL === "1";
+const isBuildPhase =
+  process.env.NEXT_PHASE === "phase-production-build" ||
+  process.env.npm_lifecycle_event === "build";
 
-if (isProduction) {
+if (isProduction && !isBuildPhase) {
   if (
     !process.env.DATABASE_URL ||
     process.env.DATABASE_URL.includes("localhost:5432") ||
@@ -622,7 +650,8 @@ if (isProduction) {
 
 // In development or when Neon is not reachable yet, use the InMemoryDb
 const useMock =
-  !isProduction &&
+  !isProduction ||
+  isBuildPhase ||
   (process.env.USE_MOCK_DB === "true" ||
     !process.env.DATABASE_URL ||
     process.env.DATABASE_URL.includes("localhost:5432"));

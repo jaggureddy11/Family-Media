@@ -12,6 +12,8 @@ interface UserItem {
   name_en: string;
   name_te: string;
   role: "ADMIN" | "FAMILY";
+  textSize?: string;
+  highContrast?: boolean;
   devices: { id: string; deviceName: string; lastSeenAt: string }[];
 }
 
@@ -31,6 +33,7 @@ export default function AdminFamilyPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [generatedLink, setGeneratedLink] = useState<GeneratedLink | null>(null);
   const [copied, setCopied] = useState(false);
+  const [savingUserId, setSavingUserId] = useState<string | null>(null);
 
   const fetchUsers = async () => {
     try {
@@ -47,6 +50,27 @@ export default function AdminFamilyPage() {
   useEffect(() => {
     fetchUsers();
   }, []);
+
+  const handleUpdateProfile = async (
+    id: string,
+    updates: { textSize?: string; highContrast?: boolean }
+  ) => {
+    setSavingUserId(id);
+    try {
+      const res = await fetch("/api/admin/family", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, ...updates }),
+      });
+      if (res.ok) {
+        await fetchUsers();
+      }
+    } catch (err) {
+      console.error("Failed to update profile:", err);
+    } finally {
+      setSavingUserId(null);
+    }
+  };
 
   const handleAddMember = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -249,24 +273,65 @@ export default function AdminFamilyPage() {
                 key={u.id}
                 className="p-6 bg-[var(--bg-surface-elevated)] border-4 border-[var(--border-subtle)] rounded-3xl flex flex-col justify-between gap-6"
               >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-full bg-slate-800 border-2 border-yellow-400 flex items-center justify-center text-yellow-300">
-                      <UserIcon className="w-10 h-10" />
+                <div className="space-y-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-16 h-16 rounded-full bg-slate-800 border-2 border-yellow-400 flex items-center justify-center text-yellow-300">
+                        <UserIcon className="w-10 h-10" />
+                      </div>
+                      <div>
+                        <h3 className="text-[var(--text-heading)] font-bold text-white">
+                          <Bi text={{ en: u.name_en, te: u.name_te }} layout="auto" />
+                        </h3>
+                        <span className="text-sm font-semibold uppercase px-3 py-1 bg-slate-800 text-yellow-300 rounded-full border border-slate-600 inline-block mt-1">
+                          {u.role}
+                        </span>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="text-[var(--text-heading)] font-bold text-white">
-                        <Bi text={{ en: u.name_en, te: u.name_te }} layout="auto" />
-                      </h3>
-                      <span className="text-sm font-semibold uppercase px-3 py-1 bg-slate-800 text-yellow-300 rounded-full border border-slate-600 inline-block mt-1">
-                        {u.role}
-                      </span>
-                    </div>
+
+                    <span className="text-slate-400 text-[var(--text-body)]">
+                      {u.devices.length} {u.devices.length === 1 ? "device" : "devices"}
+                    </span>
                   </div>
 
-                  <span className="text-slate-400 text-[var(--text-body)]">
-                    {u.devices.length} {u.devices.length === 1 ? "device" : "devices"}
-                  </span>
+                  {/* Accessibility & Visual Preferences per Profile */}
+                  <div className="bg-black/40 border-2 border-zinc-700 rounded-2xl p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-lg font-bold text-zinc-300">
+                        <Bi en="Text Scale" te="అక్షరాల పరిమాణం" />
+                      </span>
+                      <select
+                        value={u.textSize || "EXTRA_LARGE"}
+                        onChange={(e) =>
+                          handleUpdateProfile(u.id, { textSize: e.target.value })
+                        }
+                        className="bg-zinc-800 border-2 border-zinc-600 text-yellow-400 font-bold px-3 py-2 rounded-xl text-base focus:border-yellow-400 focus:outline-none"
+                      >
+                        <option value="LARGE">Large (1.0x)</option>
+                        <option value="EXTRA_LARGE">Extra Large (1.25x - Default)</option>
+                        <option value="HUGE">Huge (1.5x)</option>
+                      </select>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-lg font-bold text-zinc-300">
+                        <Bi en="High Contrast Theme" te="అధిక కాంట్రాస్ట్" />
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleUpdateProfile(u.id, { highContrast: !u.highContrast })
+                        }
+                        className={`px-4 py-1.5 rounded-xl text-base font-bold border-2 transition-colors ${
+                          u.highContrast
+                            ? "bg-yellow-400 text-black border-yellow-300"
+                            : "bg-zinc-800 text-zinc-300 border-zinc-600"
+                        }`}
+                      >
+                        {u.highContrast ? "ON (Yellow/Black)" : "OFF (Dark Theme)"}
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
                 <BigButton
@@ -284,3 +349,4 @@ export default function AdminFamilyPage() {
     </PageShell>
   );
 }
+

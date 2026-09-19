@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { cookies } from "next/headers";
+import type { NextRequest } from "next/server";
 import { prisma } from "./prisma";
 import { Role, User } from "@prisma/client";
 
@@ -294,9 +295,34 @@ export async function validateSessionToken(
 /**
  * Helper to get current authenticated user and device from incoming request cookies.
  */
-export async function getSession(): Promise<AuthenticatedSession | null> {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+export async function getSession(
+  request?: NextRequest | Headers | string
+): Promise<AuthenticatedSession | null> {
+  let token: string | undefined;
+
+  if (typeof request === "string") {
+    token = request;
+  } else if (request && "cookies" in request && typeof (request as any).cookies?.get === "function") {
+    token = (request as any).cookies.get(SESSION_COOKIE_NAME)?.value;
+  } else if (request && "headers" in request && (request as any).headers?.get) {
+    const cookieHeader = (request as any).headers.get("cookie");
+    const match = cookieHeader?.match(new RegExp(`(?:^|; )${SESSION_COOKIE_NAME}=([^;]*)`));
+    token = match ? decodeURIComponent(match[1]) : undefined;
+  } else if (request && typeof (request as any).get === "function") {
+    const cookieHeader = (request as any).get("cookie");
+    const match = cookieHeader?.match(new RegExp(`(?:^|; )${SESSION_COOKIE_NAME}=([^;]*)`));
+    token = match ? decodeURIComponent(match[1]) : undefined;
+  }
+
+  if (!token) {
+    try {
+      const cookieStore = await cookies();
+      token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+    } catch {
+      // In test context or outside Next.js request store
+    }
+  }
+
   return validateSessionToken(token);
 }
 

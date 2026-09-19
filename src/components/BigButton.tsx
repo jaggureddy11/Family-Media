@@ -16,6 +16,10 @@ export interface BigButtonProps {
   te?: string;
   /** Optional icon component */
   icon?: React.ReactNode;
+  /** Custom children element */
+  children?: React.ReactNode;
+  /** Button sizing */
+  size?: "small" | "medium" | "large";
   /** Click event handler */
   onClick?: () => void;
   /** Optional link destination if acting as a link */
@@ -48,6 +52,8 @@ export const BigButton: React.FC<BigButtonProps> = ({
   en,
   te,
   icon,
+  children,
+  size = "medium",
   onClick,
   href,
   variant = "primary",
@@ -70,16 +76,21 @@ export const BigButton: React.FC<BigButtonProps> = ({
       "bg-red-800 hover:bg-red-700 text-white border-red-500 hover:border-white";
   }
 
+  const sizeStyles =
+    size === "small"
+      ? "min-h-[56px] px-3 py-2 text-xl"
+      : size === "large"
+      ? "min-h-[88px] px-8 py-5 text-3xl"
+      : "min-h-[72px] sm:min-h-[88px] px-3 sm:px-6 py-2.5 sm:py-4 text-[var(--text-btn)]";
+
   const baseStyles = `
     kutumbam-focus
-    min-h-[72px] sm:min-h-[88px]
-    px-3 sm:px-6 py-2.5 sm:py-4
+    ${sizeStyles}
     border-4
     rounded-3xl
     flex items-center justify-center gap-2 sm:gap-4
     cursor-pointer
     transition-all duration-150
-    text-[var(--text-btn)]
     active:scale-95
     select-none
     max-w-full
@@ -100,16 +111,20 @@ export const BigButton: React.FC<BigButtonProps> = ({
           {icon}
         </span>
       )}
-      <Bi
-        k={k}
-        text={text}
-        en={en}
-        te={te}
-        layout="auto"
-        className={`font-bold tracking-tight text-center ${variant === "accent" ? "!text-black" : ""}`}
-        enClassName={`text-[0.9em] sm:text-[1.1em] ${variant === "accent" ? "!text-black" : ""}`}
-        teClassName={`text-[1.05em] sm:text-[1.25em] ${variant === "accent" ? "!text-black" : ""}`}
-      />
+      {children ? (
+        children
+      ) : (
+        <Bi
+          k={k}
+          text={text}
+          en={en}
+          te={te}
+          layout="auto"
+          className={`font-bold tracking-tight text-center ${variant === "accent" ? "!text-black" : ""}`}
+          enClassName={`text-[0.9em] sm:text-[1.1em] ${variant === "accent" ? "!text-black" : ""}`}
+          teClassName={`text-[1.05em] sm:text-[1.25em] ${variant === "accent" ? "!text-black" : ""}`}
+        />
+      )}
     </>
   );
 

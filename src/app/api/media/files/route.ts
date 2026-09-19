@@ -18,7 +18,7 @@ function getFileCategory(mimeType: string, filename: string): "PDF" | "AUDIO" | 
  * Lists folders and files at the specified folder path.
  */
 export async function GET(request: NextRequest) {
-  const session = await getSession();
+  const session = await getSession(request);
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
     const subfoldersSet = new Set<string>();
     const filesInFolder: any[] = [];
 
-    allFiles.forEach((item) => {
+    allFiles.forEach((item: any) => {
       const itemFolder = item.folderPath ? (item.folderPath.endsWith("/") ? item.folderPath : `${item.folderPath}/`) : "/";
       
       if (itemFolder === normalizedCurrent) {
@@ -57,12 +57,12 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    const folders = Array.from(subfoldersSet).map((name) => ({
+    const folders = Array.from(subfoldersSet).map((name: string) => ({
       name,
-      path: `${normalizedCurrent}${name}/`,
+      folderPath: `${normalizedCurrent}${name}/`,
     }));
 
-    const files = filesInFolder.map((item) => {
+    const files = filesInFolder.map((item: any) => {
       const cat = getFileCategory(item.mimeType, item.originalKey || item.title_en);
       return {
         id: item.id,
@@ -88,63 +88,6 @@ export async function GET(request: NextRequest) {
     console.error("Files API error:", error);
     return NextResponse.json(
       { error: error.message || "Failed to fetch files" },
-      { status: 500 }
-    );
-  }
-}
-
-/**
- * POST /api/media/files
- * Admin creates a new folder.
- */
-export async function POST(request: NextRequest) {
-  const session = await getSession();
-  if (!session || session.user.role !== "ADMIN") {
-    return NextResponse.json({ error: "Forbidden: Admin access required" }, { status: 403 });
-  }
-
-  try {
-    const body = await request.json();
-    const { folderName, parentPath = "/" } = body;
-
-    if (!folderName || typeof folderName !== "string") {
-      return NextResponse.json({ error: "Folder name is required" }, { status: 400 });
-    }
-
-    const cleanName = folderName.trim().replace(/[/\\?%*:|"<>]/g, "");
-    const normalizedParent = parentPath.endsWith("/") ? parentPath : `${parentPath}/`;
-    const fullPath = `${normalizedParent}${cleanName}/`;
-
-    // Verify depth <= 3
-    const depth = fullPath.split("/").filter(Boolean).length;
-    if (depth > 3) {
-      return NextResponse.json(
-        { error: "Maximum folder depth (3 levels) reached" },
-        { status: 400 }
-      );
-    }
-
-    // Create a placeholder .keep file to instantiate the folder in zero-ops database
-    await prisma.mediaItem.create({
-      data: {
-        type: "FILE",
-        status: "READY",
-        title_en: `${cleanName} Folder`,
-        title_te: `${cleanName} ఫోల్డర్`,
-        folderPath: fullPath,
-        sizeBytes: BigInt(0),
-        checksumSha256: "0".repeat(64),
-        mimeType: "application/x-directory",
-        originalKey: `folders${fullPath}.keep`,
-        storageKey: `folders${fullPath}.keep`,
-      },
-    });
-
-    return NextResponse.json({ success: true, folderPath: fullPath });
-  } catch (error: any) {
-    console.error("Create folder error:", error);
-    return NextResponse.json(
-      { error: error.message || "Failed to create folder" },
       { status: 500 }
     );
   }

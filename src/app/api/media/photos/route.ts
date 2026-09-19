@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
  * - limit?: number
  */
 export async function GET(request: NextRequest) {
-  const session = await getSession();
+  const session = await getSession(request);
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     const userFavorites = await prisma.favorite.findMany({
       where: { userId: session.user.id },
     });
-    const favoriteMediaIds = new Set(userFavorites.map((f) => f.mediaItemId));
+    const favoriteMediaIds = new Set(userFavorites.map((f: any) => f.mediaItemId));
 
     // TAB: ALBUMS LISTING
     if (tab === "albums" && !albumId) {
@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
 
       // Group by year for auto yearly albums
       const yearMap = new Map<number, any[]>();
-      allPhotosAndVideos.forEach((item) => {
+      allPhotosAndVideos.forEach((item: any) => {
         const d = item.takenAt ? new Date(item.takenAt) : new Date(item.createdAt);
         const y = item.year || d.getFullYear() || new Date().getFullYear();
         if (!yearMap.has(y)) yearMap.set(y, []);
@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
           };
         });
 
-      const customAlbumsList = albums.map((alb) => {
+      const customAlbumsList = albums.map((alb: any) => {
         const coverItem = alb.items?.[0]?.mediaItem;
         const coverKey = alb.coverKey || coverItem?.thumbKey || coverItem?.storageKey || coverItem?.originalKey;
         return {
@@ -115,7 +115,7 @@ export async function GET(request: NextRequest) {
           },
           orderBy: { createdAt: "desc" },
         });
-        items = media.filter((m) => {
+        items = media.filter((m: any) => {
           const d = m.takenAt ? new Date(m.takenAt) : new Date(m.createdAt);
           return (m.year || d.getFullYear()) === year;
         });
@@ -130,7 +130,7 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      const formatted = items.map((item) => {
+      const formatted = items.map((item: any) => {
         const d = item.takenAt ? new Date(item.takenAt) : new Date(item.createdAt);
         return {
           id: item.id,
@@ -166,9 +166,9 @@ export async function GET(request: NextRequest) {
       });
 
       const items = favs
-        .map((f) => f.mediaItem)
-        .filter((item): item is NonNullable<typeof item> => Boolean(item && (item.type === "PHOTO" || item.type === "FAMILY_VIDEO" || item.type === "MOVIE")))
-        .map((item) => {
+        .map((f: any) => f.mediaItem)
+        .filter((item: any): item is NonNullable<typeof item> => Boolean(item && (item.type === "PHOTO" || item.type === "FAMILY_VIDEO" || item.type === "MOVIE")))
+        .map((item: any) => {
           const d = item.takenAt ? new Date(item.takenAt) : new Date(item.createdAt);
           return {
             id: item.id,
@@ -208,7 +208,7 @@ export async function GET(request: NextRequest) {
 
     // Extract all available years for the YearJumpBar
     const availableYearsSet = new Set<number>();
-    mediaList.forEach((m) => {
+    mediaList.forEach((m: any) => {
       const d = m.takenAt ? new Date(m.takenAt) : new Date(m.createdAt);
       const y = m.year || d.getFullYear();
       if (y) availableYearsSet.add(y);
@@ -226,7 +226,7 @@ export async function GET(request: NextRequest) {
 
     const groupsMap = new Map<string, TimelineGroup>();
 
-    mediaList.forEach((item) => {
+    mediaList.forEach((item: any) => {
       const d = item.takenAt ? new Date(item.takenAt) : new Date(item.createdAt);
       const year = item.year || d.getFullYear() || new Date().getFullYear();
       const month = d.getMonth(); // 0-11

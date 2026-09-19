@@ -27,13 +27,22 @@ export function getStorageProvider(): StorageProvider {
   }
 
   const isProduction = process.env.NODE_ENV === "production" || process.env.VERCEL === "1";
+  const isBuildPhase =
+    process.env.NEXT_PHASE === "phase-production-build" ||
+    process.env.npm_lifecycle_event === "build";
 
-  const accessKeyId = process.env.STORAGE_ACCESS_KEY_ID || process.env.R2_ACCESS_KEY_ID;
-  const secretAccessKey = process.env.STORAGE_SECRET_ACCESS_KEY || process.env.R2_SECRET_ACCESS_KEY;
-  const endpoint = process.env.STORAGE_ENDPOINT || process.env.R2_ENDPOINT;
-  const accountId = process.env.STORAGE_ACCOUNT_ID || process.env.R2_ACCOUNT_ID;
-  const bucketName = process.env.STORAGE_BUCKET_NAME || process.env.R2_BUCKET_NAME || "kutumbam-private";
-  const publicDomain = process.env.STORAGE_PUBLIC_DOMAIN || process.env.R2_PUBLIC_DOMAIN;
+  const accessKeyId = process.env.R2_ACCESS_KEY_ID;
+  const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
+  const endpoint = process.env.R2_ENDPOINT;
+  const accountId = process.env.R2_ACCOUNT_ID;
+  const bucketName = process.env.R2_BUCKET_NAME || "kutumbam-private";
+
+  // Security Check: Warn if any public domain / bucket URL is configured
+  if (process.env.R2_PUBLIC_DOMAIN || process.env.STORAGE_PUBLIC_DOMAIN) {
+    console.warn(
+      "⚠️ SECURITY WARNING: R2_PUBLIC_DOMAIN is configured. Kutumbam is private-by-default; all media must use short-lived signed URLs. Ensure public access is turned OFF on the R2 bucket."
+    );
+  }
 
   // Ignore mock localhost endpoint when determining if real credentials are provided
   const hasRealEndpoint = endpoint && !endpoint.includes("localhost:9000");
@@ -45,11 +54,10 @@ export function getStorageProvider(): StorageProvider {
       secretAccessKey,
       bucketName,
       endpoint,
-      publicDomain,
     });
-  } else if (isProduction) {
+  } else if (isProduction && !isBuildPhase) {
     throw new Error(
-      "Cloudflare R2 storage credentials are required in production (STORAGE_ENDPOINT / R2_ENDPOINT, STORAGE_ACCESS_KEY_ID, STORAGE_SECRET_ACCESS_KEY, STORAGE_BUCKET_NAME). MockStorageProvider is strictly disabled."
+      "Cloudflare R2 storage credentials are required in production (R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_ACCOUNT_ID, R2_BUCKET_NAME). MockStorageProvider is strictly disabled."
     );
   } else {
     storageInstance = new MockStorageProvider();

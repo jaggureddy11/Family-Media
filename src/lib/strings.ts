@@ -39,6 +39,10 @@ export const STRINGS = {
     en: "Back",
     te: "వెనుకకు",
   },
+  folder: {
+    en: "Folder",
+    te: "ఫోల్డర్",
+  },
   search: {
     en: "Search",
     te: "వెతకండి",

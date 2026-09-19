@@ -8,10 +8,13 @@ export const dynamic = "force-dynamic";
  * GET /api/admin/albums
  * Lists all custom albums with item counts.
  */
-export async function GET() {
-  const session = await getSession();
-  if (!session || session.user.role !== "ADMIN") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+export async function GET(request?: NextRequest) {
+  const session = await getSession(request);
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (session.user.role !== "ADMIN") {
+    return NextResponse.json({ error: "Forbidden: Admin access required" }, { status: 403 });
   }
 
   try {
@@ -34,9 +37,12 @@ export async function GET() {
  * Creates a new custom album.
  */
 export async function POST(request: NextRequest) {
-  const session = await getSession();
-  if (!session || session.user.role !== "ADMIN") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const session = await getSession(request);
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (session.user.role !== "ADMIN") {
+    return NextResponse.json({ error: "Forbidden: Admin access required" }, { status: 403 });
   }
 
   try {
@@ -83,9 +89,12 @@ export async function POST(request: NextRequest) {
  * Updates album titles, cover, or adds/removes items.
  */
 export async function PATCH(request: NextRequest) {
-  const session = await getSession();
-  if (!session || session.user.role !== "ADMIN") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const session = await getSession(request);
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (session.user.role !== "ADMIN") {
+    return NextResponse.json({ error: "Forbidden: Admin access required" }, { status: 403 });
   }
 
   try {
@@ -145,9 +154,12 @@ export async function PATCH(request: NextRequest) {
  * DELETE /api/admin/albums?id=...
  */
 export async function DELETE(request: NextRequest) {
-  const session = await getSession();
-  if (!session || session.user.role !== "ADMIN") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const session = await getSession(request);
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (session.user.role !== "ADMIN") {
+    return NextResponse.json({ error: "Forbidden: Admin access required" }, { status: 403 });
   }
 
   const { searchParams } = new URL(request.url);

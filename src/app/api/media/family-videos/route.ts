@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
  * Returns all family videos grouped by Year, with watch progress and signed URLs.
  */
 export async function GET(request: NextRequest) {
-  const session = await getSession();
+  const session = await getSession(request);
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -33,13 +33,13 @@ export async function GET(request: NextRequest) {
     const userFavorites = await prisma.favorite.findMany({
       where: { userId: session.user.id },
     });
-    const favoriteSet = new Set(userFavorites.map((f) => f.mediaItemId));
+    const favoriteSet = new Set(userFavorites.map((f: any) => f.mediaItemId));
 
     const userProgress = await prisma.watchProgress.findMany({
       where: { userId: session.user.id },
     });
     const progressMap = new Map(
-      userProgress.map((p) => [
+      userProgress.map((p: any) => [
         p.mediaItemId,
         {
           positionSeconds: p.positionSeconds,
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
       ])
     );
 
-    let filtered = videos.map((v) => {
+    let filtered = videos.map((v: any) => {
       const d = v.takenAt ? new Date(v.takenAt) : new Date(v.createdAt);
       const year = v.year || d.getFullYear() || new Date().getFullYear();
       const progress = progressMap.get(v.id) || null;
@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
     // Apply search query
     if (query) {
       filtered = filtered.filter(
-        (v) =>
+        (v: any) =>
           v.title_en.toLowerCase().includes(query) ||
           v.title_te.toLowerCase().includes(query)
       );
@@ -85,12 +85,12 @@ export async function GET(request: NextRequest) {
 
     // Apply favorites filter
     if (filter === "favorites") {
-      filtered = filtered.filter((v) => v.isFavorite);
+      filtered = filtered.filter((v: any) => v.isFavorite);
     }
 
     // Group by Year
     const yearGroupsMap = new Map<number, any[]>();
-    filtered.forEach((v) => {
+    filtered.forEach((v: any) => {
       const y = v.year;
       if (!yearGroupsMap.has(y)) yearGroupsMap.set(y, []);
       yearGroupsMap.get(y)!.push(v);

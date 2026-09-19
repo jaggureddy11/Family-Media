@@ -4,8 +4,11 @@ import { prisma } from "@/lib/prisma";
 import { getStorageProvider } from "@/lib/storage";
 
 export async function GET(request: NextRequest) {
-  const session = await getSession();
-  const userId = session?.user?.id;
+  const session = await getSession(request);
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const userId = session.user.id;
 
   const { searchParams } = new URL(request.url);
   const filter = searchParams.get("filter") || "ALL"; // ALL | TELUGU | FAVORITES
