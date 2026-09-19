@@ -67,9 +67,9 @@ export const PageShell: React.FC<PageShellProps> = ({
   const effectiveTitleKey = titleKey || titleStringKey;
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [helpInfo, setHelpInfo] = useState({
-    contactName: "Family Admin",
-    phoneNumber: "+919876543210",
-    whatsappNumber: "+919876543210",
+    contactName: process.env.NEXT_PUBLIC_HELP_CONTACT_NAME || "Family Admin",
+    phoneNumber: process.env.NEXT_PUBLIC_HELP_PHONE_NUMBER || "+919110300509",
+    whatsappNumber: process.env.NEXT_PUBLIC_HELP_WHATSAPP_NUMBER || "+919110300509",
   });
 
   // Fetch help settings and profile preferences on mount
@@ -80,8 +80,8 @@ export const PageShell: React.FC<PageShellProps> = ({
         if (data.helpContactName) {
           setHelpInfo({
             contactName: data.helpContactName,
-            phoneNumber: data.helpPhoneNumber || "+919876543210",
-            whatsappNumber: data.helpWhatsappNumber || "+919876543210",
+            phoneNumber: data.helpPhoneNumber || "+919110300509",
+            whatsappNumber: data.helpWhatsappNumber || "+919110300509",
           });
         }
       })

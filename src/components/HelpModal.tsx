@@ -11,9 +11,15 @@ interface HelpModalProps {
 }
 
 export function HelpModal({ isOpen, onClose }: HelpModalProps) {
-  const [contactName, setContactName] = useState("Kiran (Son)");
-  const [phoneNumber, setPhoneNumber] = useState("+919876543210");
-  const [whatsappNumber, setWhatsappNumber] = useState("+919876543210");
+  const [contactName, setContactName] = useState(
+    process.env.NEXT_PUBLIC_HELP_CONTACT_NAME || "Family Admin"
+  );
+  const [phoneNumber, setPhoneNumber] = useState(
+    process.env.NEXT_PUBLIC_HELP_PHONE_NUMBER || "+919110300509"
+  );
+  const [whatsappNumber, setWhatsappNumber] = useState(
+    process.env.NEXT_PUBLIC_HELP_WHATSAPP_NUMBER || "+919110300509"
+  );
 
   useEffect(() => {
     if (isOpen) {
