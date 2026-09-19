@@ -15,8 +15,6 @@ class InMemoryDb {
   mediaItems: any[] = [];
   albums: any[] = [];
   albumItems: any[] = [];
-  favorites: any[] = [];
-  watchProgress: any[] = [];
   systemSettings: any[] = [];
 
   constructor() {
@@ -218,6 +216,13 @@ class InMemoryDb {
       findMany: async ({ where, orderBy, take }: any = {}) => {
         let results = [...this.mediaItems];
         if (where) {
+          if (where.id) {
+            if (typeof where.id === "string") {
+              results = results.filter((m) => m.id === where.id);
+            } else if (where.id.in && Array.isArray(where.id.in)) {
+              results = results.filter((m) => where.id.in.includes(m.id));
+            }
+          }
           if (where.type) results = results.filter((m) => m.type === where.type);
           if (where.status) results = results.filter((m) => m.status === where.status);
           if (where.checksumSha256) results = results.filter((m) => m.checksumSha256 === where.checksumSha256);
@@ -324,13 +329,183 @@ class InMemoryDb {
       },
     };
   }
+
+  rateLimitAttempts: any[] = [];
+  get rateLimitAttempt() {
+    return {
+      create: async ({ data }: any) => {
+        const attempt = {
+          id: `rla_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+          ...data,
+          createdAt: data.createdAt ? new Date(data.createdAt) : new Date(),
+        };
+        this.rateLimitAttempts.push(attempt);
+        return attempt;
+      },
+      count: async ({ where }: any = {}) => {
+        let list = this.rateLimitAttempts;
+        if (where?.key) {
+          list = list.filter((a) => a.key === where.key);
+        }
+        if (where?.createdAt?.gte) {
+          const gte = new Date(where.createdAt.gte).getTime();
+          list = list.filter((a) => new Date(a.createdAt).getTime() >= gte);
+        }
+        return list.length;
+      },
+      deleteMany: async ({ where }: any = {}) => {
+        const beforeCount = this.rateLimitAttempts.length;
+        if (where?.createdAt?.lt) {
+          const lt = new Date(where.createdAt.lt).getTime();
+          this.rateLimitAttempts = this.rateLimitAttempts.filter(
+            (a) => new Date(a.createdAt).getTime() >= lt
+          );
+        } else if (where?.key) {
+          this.rateLimitAttempts = this.rateLimitAttempts.filter((a) => a.key !== where.key);
+        }
+        return { count: beforeCount - this.rateLimitAttempts.length };
+      },
+    };
+  }
+
+  favorites: any[] = [];
+  get favorite() {
+    return {
+      findMany: async (query?: any) => {
+        let list = [...this.favorites];
+        if (query?.where?.userId) {
+          list = list.filter((f) => f.userId === query.where.userId);
+        }
+        return list.map((f) => ({
+          ...f,
+          mediaItem: this.mediaItems.find((m) => m.id === f.mediaItemId) || null,
+        }));
+      },
+      findUnique: async ({ where }: any) => {
+        if (where?.userId_mediaItemId) {
+          return (
+            this.favorites.find(
+              (f) =>
+                f.userId === where.userId_mediaItemId.userId &&
+                f.mediaItemId === where.userId_mediaItemId.mediaItemId
+            ) || null
+          );
+        }
+        return null;
+      },
+      create: async ({ data }: any) => {
+        const id = `fav_${Date.now()}`;
+        const fav = { id, ...data, createdAt: new Date() };
+        this.favorites.push(fav);
+        return fav;
+      },
+      delete: async ({ where }: any) => {
+        const idx = this.favorites.findIndex(
+          (f) =>
+            (where.id && f.id === where.id) ||
+            (where.userId_mediaItemId &&
+              f.userId === where.userId_mediaItemId.userId &&
+              f.mediaItemId === where.userId_mediaItemId.mediaItemId)
+        );
+        if (idx !== -1) {
+          const [removed] = this.favorites.splice(idx, 1);
+          return removed;
+        }
+        return null;
+      },
+      deleteMany: async ({ where }: any) => {
+        const before = this.favorites.length;
+        this.favorites = this.favorites.filter((f) => {
+          if (where.userId && f.userId === where.userId) return false;
+          if (where.mediaItemId && f.mediaItemId === where.mediaItemId) return false;
+          return true;
+        });
+        return { count: before - this.favorites.length };
+      },
+    };
+  }
+
+  watchProgressItems: any[] = [];
+  get watchProgress() {
+    return {
+      findMany: async (query?: any) => {
+        let list = [...this.watchProgressItems];
+        if (query?.where?.userId) {
+          list = list.filter((w) => w.userId === query.where.userId);
+        }
+        if (query?.where?.isCompleted !== undefined) {
+          list = list.filter((w) => w.isCompleted === query.where.isCompleted);
+        }
+        if (query?.orderBy?.lastWatchedAt === "desc") {
+          list.sort(
+            (a, b) =>
+              new Date(b.lastWatchedAt).getTime() - new Date(a.lastWatchedAt).getTime()
+          );
+        }
+        if (query?.take) {
+          list = list.slice(0, query.take);
+        }
+        return list.map((w) => ({
+          ...w,
+          mediaItem: this.mediaItems.find((m) => m.id === w.mediaItemId) || null,
+        }));
+      },
+      findUnique: async ({ where }: any) => {
+        if (where?.userId_mediaItemId) {
+          return (
+            this.watchProgressItems.find(
+              (w) =>
+                w.userId === where.userId_mediaItemId.userId &&
+                w.mediaItemId === where.userId_mediaItemId.mediaItemId
+            ) || null
+          );
+        }
+        return null;
+      },
+      upsert: async ({ where, create, update }: any) => {
+        const existing = this.watchProgressItems.find(
+          (w) =>
+            w.userId === where.userId_mediaItemId.userId &&
+            w.mediaItemId === where.userId_mediaItemId.mediaItemId
+        );
+        if (existing) {
+          Object.assign(existing, update, { lastWatchedAt: new Date() });
+          return existing;
+        }
+        const id = `wp_${Date.now()}`;
+        const newWp = {
+          id,
+          ...create,
+          lastWatchedAt: new Date(),
+        };
+        this.watchProgressItems.push(newWp);
+        return newWp;
+      },
+    };
+  }
+}
+
+// In production (NODE_ENV=production or on Vercel), in-memory Prisma is strictly disabled
+const isProduction = process.env.NODE_ENV === "production" || process.env.VERCEL === "1";
+
+if (isProduction) {
+  if (
+    !process.env.DATABASE_URL ||
+    process.env.DATABASE_URL.includes("localhost:5432") ||
+    process.env.USE_MOCK_DB === "true"
+  ) {
+    throw new Error(
+      "DATABASE_URL pointing to real PostgreSQL/Neon is required in production. InMemoryDb fallback is strictly disabled."
+    );
+  }
 }
 
 // In development or when Neon is not reachable yet, use the InMemoryDb
 const useMock =
-  process.env.USE_MOCK_DB === "true" ||
-  !process.env.DATABASE_URL ||
-  process.env.DATABASE_URL.includes("localhost:5432");
+  !isProduction &&
+  (process.env.USE_MOCK_DB === "true" ||
+    !process.env.DATABASE_URL ||
+    process.env.DATABASE_URL.includes("localhost:5432"));
 
 let prismaInstance: any;
 

@@ -33,6 +33,7 @@ interface MediaItem {
   posterUrl?: string;
   thumbUrl?: string;
   createdAt: string;
+  failureReason?: string;
   albumItems?: Array<{ album: { id: string; titleEn: string; titleTe: string } }>;
 }
 
@@ -315,6 +316,14 @@ export default function AdminLibraryPage() {
                           <CheckCircle2 className="w-5 h-5" />
                           Ready
                         </span>
+                        {item.failureReason && (
+                          <span className="px-3 py-1 bg-red-950/90 border-2 border-red-500 rounded-lg text-red-200 font-bold flex items-center gap-2">
+                            <AlertCircle className="w-5 h-5 text-red-400 shrink-0" />
+                            <span>
+                              <Bi k="playbackError" />: {item.failureReason}
+                            </span>
+                          </span>
+                        )}
                       </div>
                     </div>
 

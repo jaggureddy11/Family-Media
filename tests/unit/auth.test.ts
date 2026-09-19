@@ -9,6 +9,7 @@ import {
   createDeviceSession,
   validateSessionToken,
 } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
 describe("Auth & Token Security Utilities", () => {
@@ -69,16 +70,16 @@ describe("Auth & Token Security Utilities", () => {
     expect(await verifyAdminPassphrase("wrongPassword")).toBe(false);
   });
 
-  it("enforces sliding-window rate limits", () => {
+  it("enforces sliding-window rate limits backed by attempt records", async () => {
     const testIp = `test-ip-${Date.now()}`;
 
     // First 3 attempts should be allowed
-    expect(checkRateLimit(testIp, 3, 60000).allowed).toBe(true);
-    expect(checkRateLimit(testIp, 3, 60000).allowed).toBe(true);
-    expect(checkRateLimit(testIp, 3, 60000).allowed).toBe(true);
+    expect((await checkRateLimit(testIp, 3, 60000)).allowed).toBe(true);
+    expect((await checkRateLimit(testIp, 3, 60000)).allowed).toBe(true);
+    expect((await checkRateLimit(testIp, 3, 60000)).allowed).toBe(true);
 
     // 4th attempt should be blocked
-    const fourth = checkRateLimit(testIp, 3, 60000);
+    const fourth = await checkRateLimit(testIp, 3, 60000);
     expect(fourth.allowed).toBe(false);
     expect(fourth.remainingAttempts).toBe(0);
   });
@@ -94,5 +95,42 @@ describe("Auth & Token Security Utilities", () => {
     expect(session?.user.name_en).toBe("Amma");
     expect(session?.device.deviceName).toBe("Amma's iPad");
     expect(session?.device.isRevoked).toBe(false);
+  });
+
+  it("proves that a revoked device is immediately signed out on its next request", async () => {
+    const { rawToken, deviceId } = await createDeviceSession({
+      userId: "mom-1",
+      deviceName: "Amma's Old Phone",
+    });
+
+    // 1. Initially valid
+    const validSession = await validateSessionToken(rawToken);
+    expect(validSession).not.toBeNull();
+
+    // 2. Admin revokes device in database
+    await prisma.device.update({
+      where: { id: deviceId },
+      data: { isRevoked: true },
+    });
+
+    // 3. Next request re-checks against database and is rejected
+    const revokedSession = await validateSessionToken(rawToken);
+    expect(revokedSession).toBeNull();
+  });
+
+  it("enforces production ADMIN_PASSPHRASE_HASH requirement and rejects plaintext", async () => {
+    const origNodeEnv = process.env.NODE_ENV;
+    try {
+      process.env.NODE_ENV = "production";
+      delete process.env.ADMIN_PASSPHRASE_HASH;
+      process.env.ADMIN_PASSPHRASE = "plaintextPass";
+
+      // Must throw an error requiring ADMIN_PASSPHRASE_HASH
+      await expect(verifyAdminPassphrase("plaintextPass")).rejects.toThrow(
+        /ADMIN_PASSPHRASE_HASH is strictly required in production/
+      );
+    } finally {
+      process.env.NODE_ENV = origNodeEnv;
+    }
   });
 });

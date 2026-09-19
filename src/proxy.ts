@@ -4,17 +4,33 @@ const SESSION_COOKIE_NAME = "kutumbam_session";
 const SESSION_SECRET =
   process.env.SESSION_SECRET || "kutumbam-private-session-secret-key-salt-987654321";
 
+const isProduction = process.env.NODE_ENV === "production" || process.env.VERCEL === "1";
+
 // Public path prefixes that do not require an active session
 const PUBLIC_PATHS = [
   "/login",
   "/link",
-  "/styleguide",
-  "/api/auth/login",
+  ...(isProduction ? [] : ["/styleguide"]),
+  "/api/auth",
   "/api/health",
   "/_next",
   "/fonts",
   "/favicon.ico",
 ];
+
+function getR2Origin(): string {
+  const endpoint =
+    process.env.STORAGE_ENDPOINT ||
+    process.env.R2_ENDPOINT ||
+    process.env.R2_PUBLIC_DOMAIN;
+  if (!endpoint) return "";
+  try {
+    const parsed = new URL(endpoint.startsWith("http") ? endpoint : `https://${endpoint}`);
+    return `${parsed.protocol}//${parsed.host}`;
+  } catch {
+    return "";
+  }
+}
 
 /**
  * Validates HMAC-SHA256 signed session cookie in Edge runtime.
@@ -72,13 +88,22 @@ export default async function proxy(request: NextRequest) {
   const sessionCookie = request.cookies.get(SESSION_COOKIE_NAME)?.value;
   const session = sessionCookie ? await verifySignedCookie(sessionCookie) : null;
 
-  // 3. If accessing /login and already logged in, redirect to home or admin
+  // 3. Gate /styleguide behind admin in production
+  if (pathname.startsWith("/styleguide") && isProduction) {
+    if (session?.role !== "ADMIN") {
+      const loginUrl = new URL("/login", request.url);
+      loginUrl.searchParams.set("from", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+  }
+
+  // 4. If accessing /login and already logged in, redirect to home or admin
   if (pathname === "/login" && session) {
     const redirectUrl = session.role === "ADMIN" ? "/admin/family" : "/";
     return NextResponse.redirect(new URL(redirectUrl, request.url));
   }
 
-  // 4. If path is protected and no valid session, redirect to /login
+  // 5. If path is protected and no valid session, redirect to /login
   if (!isPublic && !session) {
     const loginUrl = new URL("/login", request.url);
     if (pathname !== "/") {
@@ -87,28 +112,31 @@ export default async function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // 5. If accessing /admin/* and role is not ADMIN, redirect to /login
+  // 6. If accessing /admin/* and role is not ADMIN, redirect to /login
   if (pathname.startsWith("/admin") && session?.role !== "ADMIN") {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  // 6. Proceed and apply strict privacy & security headers to every response
+  // 7. Proceed and apply strict privacy & security headers to every response
   const response = NextResponse.next();
 
   // Privacy: Never index in search engines
   response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive, nosnippet");
 
-  // Strict CSP: Zero third parties, zero analytics, self-hosted media & fonts only
+  // Strict CSP: Zero third parties, zero external CDNs, only self-hosted assets + R2 origin
+  const r2Origin = getR2Origin();
+  const r2Src = r2Origin ? ` ${r2Origin}` : "";
+
   response.headers.set(
     "Content-Security-Policy",
     [
       "default-src 'self'",
-      "img-src 'self' data: blob: https:",
-      "media-src 'self' blob: https:",
+      `img-src 'self' data: blob:${r2Src}`,
+      `media-src 'self' blob:${r2Src}`,
       "style-src 'self' 'unsafe-inline'",
       "font-src 'self'",
       "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-      "connect-src 'self'",
+      `connect-src 'self'${r2Src}`,
       "frame-ancestors 'none'",
     ].join("; ")
   );

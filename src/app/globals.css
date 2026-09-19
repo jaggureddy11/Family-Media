@@ -119,3 +119,16 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* Subtitles ::cue styling for low-vision users on solid black box */
+video::cue {
+  font-size: calc(2.2rem * var(--text-scale, 1.25));
+  font-weight: 700;
+  line-height: 1.6;
+  background-color: rgba(0, 0, 0, 0.95);
+  color: #facc15;
+  border-radius: 8px;
+  padding: 6px 16px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+

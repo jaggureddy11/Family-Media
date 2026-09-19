@@ -173,3 +173,12 @@ model SystemSetting {
   value       String
   updatedAt   DateTime  @updatedAt
 }
+
+model RateLimitAttempt {
+  id        String   @id @default(cuid())
+  key       String   // e.g. "login:127.0.0.1", "link:token_hash"
+  createdAt DateTime @default(now())
+
+  @@index([key, createdAt])
+  @@map("rate_limit_attempts")
+}

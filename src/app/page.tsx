@@ -1,58 +1,108 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Film, Image as ImageIcon, Video, Folder, Play } from "lucide-react";
 import { PageShell } from "@/components/PageShell";
 import { Bi } from "@/components/Bi";
 import { BigTile } from "@/components/BigTile";
 
+interface ContinueItem {
+  id: string;
+  type: string;
+  titleEn: string;
+  titleTe: string;
+  year?: number;
+  durationSeconds: number;
+  positionSeconds: number;
+  percent: number;
+  posterUrl?: string;
+  thumbUrl?: string;
+}
+
 export default function HomePage() {
+  const [profileNameEn, setProfileNameEn] = useState<string>("Amma");
+  const [profileNameTe, setProfileNameTe] = useState<string>("అమ్మా");
+  const [continueItems, setContinueItems] = useState<ContinueItem[]>([]);
+  const [loadingContinue, setLoadingContinue] = useState(true);
+
+  useEffect(() => {
+    // 1. Fetch user profile from active session
+    fetch("/api/auth/session")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.user) {
+          if (data.user.name_en) setProfileNameEn(data.user.name_en);
+          if (data.user.name_te) setProfileNameTe(data.user.name_te);
+        }
+      })
+      .catch(() => {});
+
+    // 2. Fetch continue watching items
+    fetch("/api/media/continue-watching")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.items && Array.isArray(data.items)) {
+          setContinueItems(data.items);
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        setLoadingContinue(false);
+      });
+  }, []);
+
   return (
     <PageShell showBack={false} showHome={false}>
       <div className="flex flex-col gap-10 sm:gap-14 py-4 sm:py-6">
-        {/* Warm Bilingual Greeting for Mom */}
+        {/* Warm Bilingual Greeting from Mom's Profile */}
         <div className="flex flex-col sm:flex-row items-start sm:items-baseline justify-between gap-4 border-b-4 border-[var(--border-subtle)] pb-6">
           <h1 className="text-[var(--text-heading)] font-extrabold tracking-tight">
             <Bi
-              text={{ en: "Namaste, Amma", te: "నమస్తే, అమ్మా" }}
+              text={{
+                en: `Namaste, ${profileNameEn}`,
+                te: `నమస్తే, ${profileNameTe}`,
+              }}
               layout="auto"
               enClassName="text-[var(--text-secondary)] text-[0.9em]"
               teClassName="text-[var(--accent)] text-[1.25em]"
             />
           </h1>
-
-          <Link
-            href="/styleguide"
-            className="text-[var(--text-min)] text-slate-400 hover:text-white underline underline-offset-4"
-          >
-            Styleguide · స్టైల్ గైడ్
-          </Link>
         </div>
 
-        {/* Continue Watching Row */}
-        <section className="flex flex-col gap-4">
-          <h2 className="text-[var(--text-body)] font-bold text-yellow-300">
-            <Bi k="continueWatching" layout="auto" />
-          </h2>
+        {/* Continue Watching Row (Only shown if items exist) */}
+        {!loadingContinue && continueItems.length > 0 && (
+          <section className="flex flex-col gap-4">
+            <h2 className="text-[var(--text-body)] font-bold text-yellow-300">
+              <Bi k="continueWatching" layout="auto" />
+            </h2>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <BigTile
-              titleEn="Maya Bazaar"
-              titleTe="మాయాబజార్"
-              meta="1957 · 2h 45m"
-              aspectRatio="video"
-              progressPercent={65}
-              icon={<Play className="w-16 h-16 fill-current text-[var(--accent)]" />}
-              href="/movies"
-            />
-          </div>
-        </section>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {continueItems.slice(0, 4).map((item) => (
+                <BigTile
+                  key={item.id}
+                  titleEn={item.titleEn}
+                  titleTe={item.titleTe}
+                  meta={
+                    item.year
+                      ? `${item.year} · ${Math.round(item.percent)}%`
+                      : `${Math.round(item.percent)}%`
+                  }
+                  aspectRatio="video"
+                  progressPercent={item.percent}
+                  imageUrl={item.posterUrl || item.thumbUrl}
+                  icon={<Play className="w-16 h-16 fill-current text-[var(--accent)]" />}
+                  href={`/watch/${item.id}`}
+                />
+              ))}
+            </div>
+          </section>
+        )}
 
-        {/* Exactly 4 Giant Destination Buttons (2x2 on phone, 4 across on TV) */}
+        {/* Exactly 4 Giant Destination Buttons: Movies, Photos, Family Videos, Other Files */}
         <section className="flex flex-col gap-4">
           <h2 className="sr-only">
-            <Bi text={{ en: "Main Media Destinations", te: "ప్రధాన విభాగాలు" }} />
+            <Bi text={{ en: "Main Destinations", te: "ప్రధాన విభాగాలు" }} />
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">

@@ -18,7 +18,7 @@ export async function GET(
 
   // Rate limit redemption attempts
   const maxAttempts = process.env.NODE_ENV === "production" ? 15 : 100;
-  const rateLimit = checkRateLimit(`redeem_${ip}`, maxAttempts, 15 * 60 * 1000);
+  const rateLimit = await checkRateLimit(`redeem_${ip}`, maxAttempts, 15 * 60 * 1000);
   if (!rateLimit.allowed) {
     return NextResponse.redirect(new URL("/link/error?type=rate_limit", request.url));
   }

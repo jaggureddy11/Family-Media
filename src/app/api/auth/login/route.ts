@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
   const ip = request.headers.get("x-forwarded-for") || "127.0.0.1";
   const rateLimitKey = `login_${ip}`;
   const maxAttempts = process.env.NODE_ENV === "production" ? 5 : 100;
-  const limit = checkRateLimit(rateLimitKey, maxAttempts, 15 * 60 * 1000);
+  const limit = await checkRateLimit(rateLimitKey, maxAttempts, 15 * 60 * 1000);
 
   if (!limit.allowed) {
     return NextResponse.json(

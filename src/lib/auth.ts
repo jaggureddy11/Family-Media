@@ -16,27 +16,64 @@ interface RateLimitEntry {
 const rateLimitMap = new Map<string, RateLimitEntry>();
 
 /**
- * Checks sliding-window rate limit for sensitive endpoints (login, link redemption).
+ * Checks sliding-window rate limit using Postgres (RateLimitAttempt table).
+ * Falls back to in-memory map if database is not reachable.
  */
-export function checkRateLimit(
+export async function checkRateLimit(
   key: string,
   maxAttempts = 5,
   windowMs = 15 * 60 * 1000
-): { allowed: boolean; remainingAttempts: number; resetAt: number } {
+): Promise<{ allowed: boolean; remainingAttempts: number; resetAt: number }> {
   const now = Date.now();
-  const entry = rateLimitMap.get(key);
+  const windowStart = new Date(now - windowMs);
 
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(key, { count: 1, resetAt: now + windowMs });
-    return { allowed: true, remainingAttempts: maxAttempts - 1, resetAt: now + windowMs };
+  try {
+    // Delete expired attempts
+    await prisma.rateLimitAttempt.deleteMany({
+      where: {
+        createdAt: { lt: windowStart },
+      },
+    });
+
+    // Count attempts within active sliding window
+    const currentAttempts = await prisma.rateLimitAttempt.count({
+      where: {
+        key,
+        createdAt: { gte: windowStart },
+      },
+    });
+
+    if (currentAttempts >= maxAttempts) {
+      return { allowed: false, remainingAttempts: 0, resetAt: now + windowMs };
+    }
+
+    // Record new attempt
+    await prisma.rateLimitAttempt.create({
+      data: {
+        key,
+      },
+    });
+
+    return {
+      allowed: true,
+      remainingAttempts: maxAttempts - (currentAttempts + 1),
+      resetAt: now + windowMs,
+    };
+  } catch {
+    // In-memory fallback
+    const entry = rateLimitMap.get(key);
+    if (!entry || now > entry.resetAt) {
+      rateLimitMap.set(key, { count: 1, resetAt: now + windowMs });
+      return { allowed: true, remainingAttempts: maxAttempts - 1, resetAt: now + windowMs };
+    }
+
+    if (entry.count >= maxAttempts) {
+      return { allowed: false, remainingAttempts: 0, resetAt: entry.resetAt };
+    }
+
+    entry.count += 1;
+    return { allowed: true, remainingAttempts: maxAttempts - entry.count, resetAt: entry.resetAt };
   }
-
-  if (entry.count >= maxAttempts) {
-    return { allowed: false, remainingAttempts: 0, resetAt: entry.resetAt };
-  }
-
-  entry.count += 1;
-  return { allowed: true, remainingAttempts: maxAttempts - entry.count, resetAt: entry.resetAt };
 }
 
 /**
@@ -55,14 +92,22 @@ export function generateRandomToken(bytes = 32): string {
 
 /**
  * Verifies admin passphrase against environment configuration.
+ * In production (NODE_ENV=production or on Vercel), ADMIN_PASSPHRASE_HASH (bcrypt/argon2/sha256)
+ * is strictly required; plain ADMIN_PASSPHRASE is accepted only in development.
  */
 export async function verifyAdminPassphrase(passphrase: string): Promise<boolean> {
   if (!passphrase) return false;
 
+  const isProduction = process.env.NODE_ENV === "production" || process.env.VERCEL === "1";
   const envHash = process.env.ADMIN_PASSPHRASE_HASH;
   const envPlain = process.env.ADMIN_PASSPHRASE;
 
-  if (envHash) {
+  if (isProduction) {
+    if (!envHash) {
+      throw new Error(
+        "ADMIN_PASSPHRASE_HASH is strictly required in production. Plaintext ADMIN_PASSPHRASE is disabled."
+      );
+    }
     // If bcrypt format ($2a$, $2b$, $2y$)
     if (envHash.startsWith("$2")) {
       return bcrypt.compare(passphrase, envHash);
@@ -71,7 +116,15 @@ export async function verifyAdminPassphrase(passphrase: string): Promise<boolean
     return hashToken(passphrase) === envHash;
   }
 
-  // Fallback for local development if plain passphrase provided
+  // Development/test
+  if (envHash) {
+    if (envHash.startsWith("$2")) {
+      return bcrypt.compare(passphrase, envHash);
+    }
+    return hashToken(passphrase) === envHash;
+  }
+
+  // Plain passphrase allowed ONLY in development/test
   if (envPlain) {
     return passphrase === envPlain;
   }

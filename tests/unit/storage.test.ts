@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { MockStorageProvider } from "@/lib/storage/mock-provider";
-import { getStorageProvider } from "@/lib/storage";
+import { getStorageProvider, resetStorageProvider } from "@/lib/storage";
 
 describe("StorageProvider Abstraction", () => {
   let storage: MockStorageProvider;
@@ -60,5 +60,22 @@ describe("StorageProvider Abstraction", () => {
     
     await storage.delete(key);
     expect(await storage.exists(key)).toBe(false);
+  });
+
+  it("strictly disables MockStorageProvider in production when R2 credentials are missing", () => {
+    const origNodeEnv = process.env.NODE_ENV;
+    try {
+      resetStorageProvider();
+      process.env.NODE_ENV = "production";
+      delete process.env.STORAGE_ACCESS_KEY_ID;
+      delete process.env.R2_ACCESS_KEY_ID;
+
+      expect(() => getStorageProvider()).toThrow(
+        /Cloudflare R2 storage credentials are required in production/
+      );
+    } finally {
+      process.env.NODE_ENV = origNodeEnv;
+      resetStorageProvider();
+    }
   });
 });

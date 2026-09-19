@@ -445,6 +445,82 @@ export const STRINGS = {
     en: "Remaining",
     te: "మిగిలిన సమయం",
   },
+  namaste: {
+    en: "Namaste",
+    te: "నమస్తే",
+  },
+  resumeFrom: {
+    en: "Resume from",
+    te: "నుండి కొనసాగించండి",
+  },
+  voiceSearch: {
+    en: "Voice Search",
+    te: "వాయిస్ శోధన",
+  },
+  listening: {
+    en: "Listening...",
+    te: "వింటోంది...",
+  },
+  speakNow: {
+    en: "Speak now",
+    te: "ఇప్పుడు మాట్లాడండి",
+  },
+  voiceNotSupported: {
+    en: "Voice search not supported on this browser",
+    te: "ఈ బ్రౌజర్‌లో వాయిస్ సెర్చ్ సపోర్ట్ లేదు",
+  },
+  clearSearch: {
+    en: "Clear search",
+    te: "సెర్చ్ క్లియర్ చేయండి",
+  },
+  subtitles: {
+    en: "Subtitles",
+    te: "ఉపశీర్షికలు",
+  },
+  subtitlesOn: {
+    en: "Subtitles on",
+    te: "ఉపశీర్షికలు ఆన్",
+  },
+  loadingVideo: {
+    en: "Loading video...",
+    te: "వీడియో లోడ్ అవుతోంది...",
+  },
+  playbackFailed: {
+    en: "Video playback failed. Please ask family for help.",
+    te: "వీడియో ప్లే అవ్వలేదు. దయచేసి కుటుంబ సభ్యుల సహాయం తీసుకోండి.",
+  },
+  comingSoon: {
+    en: "Coming soon",
+    te: "త్వరలో వస్తుంది",
+  },
+  photosDescription: {
+    en: "Family photos collection",
+    te: "కుటుంబ ఫోటోల సేకరణ",
+  },
+  familyVideosDescription: {
+    en: "Home and family memories",
+    te: "కుటుంబ జ్ఞాపకాలు",
+  },
+  otherFilesDescription: {
+    en: "Documents and other family files",
+    te: "పత్రాలు మరియు ఇతర ఫైళ్లు",
+  },
+  searchMovies: {
+    en: "Search movies...",
+    te: "సినిమాలను వెతకండి...",
+  },
+  noMoviesFound: {
+    en: "No movies found matching your search",
+    te: "మీ శోధనకు తగిన సినిమాలు ఏవీ దొరకలేదు",
+  },
+  allMovies: {
+    en: "All Movies",
+    te: "అన్ని సినిమాలు",
+  },
+  playbackError: {
+    en: "Playback Error",
+    te: "ప్లేబ్యాక్ లోపం",
+  },
 } as const satisfies Record<string, BilingualText>;
 
 export type StringKey = keyof typeof STRINGS;
