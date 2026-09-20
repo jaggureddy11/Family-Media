@@ -93,6 +93,14 @@ export const STRINGS = {
     en: "Exit Fullscreen",
     te: "స్క్రీన్ సాధారణ పరిమాణం",
   },
+  fitFill: {
+    en: "Fill Screen",
+    te: "పూర్తిగా నింపు",
+  },
+  fitOriginal: {
+    en: "Original Fit",
+    te: "అసలు పరిమాణం",
+  },
   audioAndSubtitles: {
     en: "Audio & Subtitles",
     te: "భాష & ఉపశీర్షికలు",

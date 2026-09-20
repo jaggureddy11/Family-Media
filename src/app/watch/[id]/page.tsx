@@ -13,6 +13,8 @@ import {
   Home,
   Film,
   HelpCircle,
+  Expand,
+  Shrink,
 } from "lucide-react";
 import { Bi } from "@/components/Bi";
 import { BigButton } from "@/components/BigButton";
@@ -70,6 +72,7 @@ export default function WatchPlayerPage() {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [showControls, setShowControls] = useState(true);
+  const [videoFit, setVideoFit] = useState<"contain" | "cover">("contain");
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isEnded, setIsEnded] = useState(false);
   const [playbackError, setPlaybackError] = useState<string | null>(null);
@@ -296,7 +299,7 @@ export default function WatchPlayerPage() {
       });
   };
 
-  // 8. Auto-hide controls after 3 seconds of inactivity
+  // 8. Auto-hide controls after 3.5 seconds of inactivity
   const resetControlsTimer = useCallback(() => {
     setShowControls(true);
     if (controlsTimeoutRef.current) {
@@ -305,7 +308,7 @@ export default function WatchPlayerPage() {
     if (isPlaying) {
       controlsTimeoutRef.current = setTimeout(() => {
         setShowControls(false);
-      }, 3000);
+      }, 3500);
     }
   }, [isPlaying]);
 
@@ -315,6 +318,39 @@ export default function WatchPlayerPage() {
       if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
     };
   }, [isPlaying, resetControlsTimer]);
+
+  const handleScreenClick = useCallback(
+    (e: React.MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.closest("button, [role='slider'], a, input")) {
+        return;
+      }
+
+      setShowControls((prev) => {
+        const next = !prev;
+        if (controlsTimeoutRef.current) {
+          clearTimeout(controlsTimeoutRef.current);
+          controlsTimeoutRef.current = null;
+        }
+        if (next && isPlaying) {
+          controlsTimeoutRef.current = setTimeout(() => {
+            setShowControls(false);
+          }, 3500);
+        }
+        return next;
+      });
+    },
+    [isPlaying]
+  );
+
+  const toggleVideoFit = useCallback(
+    (e?: React.MouseEvent) => {
+      if (e) e.stopPropagation();
+      setVideoFit((prev) => (prev === "contain" ? "cover" : "contain"));
+      resetControlsTimer();
+    },
+    [resetControlsTimer]
+  );
 
   // 9. Playback Controls
   const togglePlay = () => {
@@ -636,9 +672,8 @@ export default function WatchPlayerPage() {
     <div
       ref={containerRef}
       onMouseMove={resetControlsTimer}
-      onTouchStart={resetControlsTimer}
-      onClick={resetControlsTimer}
-      className="relative w-screen h-screen bg-black text-white overflow-hidden select-none flex items-center justify-center"
+      onClick={handleScreenClick}
+      className="fixed inset-0 w-full h-[100dvh] bg-black text-white overflow-hidden select-none flex items-center justify-center touch-manipulation"
     >
       {/* Loading state */}
       {loading && (
@@ -701,88 +736,116 @@ export default function WatchPlayerPage() {
           onPause={() => setIsPlaying(false)}
           onEnded={handleVideoEnded}
           onError={handleVideoError}
-          className="w-full h-full object-contain cursor-pointer"
-          onClick={togglePlay}
+          className={`w-full h-full max-w-full max-h-full transition-all duration-300 ${
+            videoFit === "cover" ? "object-cover" : "object-contain"
+          }`}
         />
       )}
 
-      {/* Controls Overlay (Auto-hides after 3s when playing) */}
+      {/* Controls Overlay (Auto-hides after 3.5s when playing) */}
       {!loading && !playbackError && !isEnded && (
         <div
-          className={`absolute inset-0 z-30 pointer-events-none transition-opacity duration-300 flex flex-col justify-between p-3 sm:p-8 bg-gradient-to-t from-black/95 via-transparent to-black/85 ${
-            showControls ? "opacity-100" : "opacity-0"
+          className={`absolute inset-0 z-30 transition-opacity duration-300 flex flex-col justify-between ${
+            showControls ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
           }`}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              handleScreenClick(e);
+            }
+          }}
         >
           {/* Top Bar: Back Button & Title Info */}
-          <div className="flex items-center justify-between gap-3 pointer-events-auto w-full pt-1 sm:pt-2">
+          <div className="flex items-center justify-between gap-3 pointer-events-auto w-full pt-2 sm:pt-4 px-3 sm:px-6 bg-gradient-to-b from-black/80 to-transparent">
             <button
               type="button"
-              onClick={() => router.push("/movies")}
-              className="kutumbam-focus min-h-[52px] sm:min-h-[72px] px-4 sm:px-6 bg-black/80 hover:bg-black border-4 border-white text-white rounded-2xl flex items-center gap-2 sm:gap-3 text-base sm:text-[var(--text-btn)] font-bold shadow-2xl transition-transform active:scale-95 shrink-0"
+              onClick={(e) => {
+                e.stopPropagation();
+                router.push("/movies");
+              }}
+              className="kutumbam-focus min-h-[40px] sm:min-h-[48px] px-3 sm:px-4 bg-black/70 hover:bg-black/90 border-2 border-white/90 text-white rounded-xl flex items-center gap-2 text-xs sm:text-sm font-bold shadow-lg transition-transform active:scale-95 shrink-0 backdrop-blur-sm"
               data-nav-item="true"
             >
-              <ArrowLeft className="w-6 h-6 sm:w-8 sm:h-8" />
+              <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
               <Bi k="back" />
             </button>
 
             {mediaData && (
               <div className="text-right truncate flex-1 min-w-0 pl-2">
-                <h1 className="text-base sm:text-[var(--text-heading)] font-bold text-white drop-shadow-md truncate">
+                <h1 className="text-xs sm:text-lg font-bold text-white drop-shadow truncate">
                   {mediaData.media.titleEn}
                 </h1>
-                <div className="text-xs sm:text-[var(--text-body)] font-bold text-yellow-300 drop-shadow-md font-sans truncate">
+                <div className="text-[11px] sm:text-xs font-semibold text-yellow-300 drop-shadow font-sans truncate">
                   {mediaData.media.titleTe}
                 </div>
               </div>
             )}
           </div>
 
-          {/* Center Play/Pause & 10s Skip Giant Buttons */}
-          <div className="flex items-center justify-center gap-4 sm:gap-12 pointer-events-auto my-auto">
+          {/* Center Play/Pause & 10s Skip Buttons (Sleek, non-obtrusive, responsive) */}
+          <div
+            className="flex items-center justify-center gap-6 sm:gap-14 my-auto pointer-events-auto py-4"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                handleScreenClick(e);
+              }
+            }}
+          >
             {/* Back 10s Button */}
             <button
               type="button"
-              onClick={() => seekBy(-10)}
-              className="kutumbam-focus min-h-[64px] sm:min-h-[96px] min-w-[64px] sm:min-w-[96px] p-3 sm:p-5 rounded-full bg-black/80 hover:bg-zinc-800 border-4 border-white text-white flex flex-col items-center justify-center shadow-xl active:scale-90"
+              onClick={(e) => {
+                e.stopPropagation();
+                seekBy(-10);
+              }}
+              className="kutumbam-focus w-11 h-11 sm:w-16 sm:h-16 rounded-full bg-black/60 hover:bg-black/80 border-2 border-white/80 text-white flex flex-col items-center justify-center shadow-xl active:scale-90 backdrop-blur-sm transition-transform"
               data-nav-item="true"
               aria-label="Back 10s · 10 సెకన్లు వెనుకకు"
             >
-              <RotateCcw className="w-7 h-7 sm:w-12 sm:h-12" />
-              <span className="text-xs sm:text-[var(--text-min)] font-extrabold mt-0.5 sm:mt-1">10s</span>
+              <RotateCcw className="w-5 h-5 sm:w-7 sm:h-7" />
+              <span className="text-[9px] sm:text-xs font-black tracking-tight leading-none mt-0.5">10s</span>
             </button>
 
-            {/* Giant Play/Pause Button */}
+            {/* Play/Pause Button */}
             <button
               type="button"
-              onClick={togglePlay}
-              className="kutumbam-focus min-h-[84px] sm:min-h-[128px] min-w-[84px] sm:min-w-[128px] p-4 sm:p-6 rounded-full bg-[var(--accent)] hover:bg-yellow-300 border-4 sm:border-6 border-white text-black flex items-center justify-center shadow-2xl active:scale-95 transition-transform"
+              onClick={(e) => {
+                e.stopPropagation();
+                togglePlay();
+              }}
+              className="kutumbam-focus w-15 h-15 sm:w-20 sm:h-20 rounded-full bg-yellow-400 hover:bg-yellow-300 border-3 sm:border-4 border-white text-black flex items-center justify-center shadow-2xl active:scale-95 transition-transform"
               data-nav-item="true"
               aria-label={isPlaying ? "Pause · పాజ్" : "Play · ప్లే"}
             >
               {isPlaying ? (
-                <Pause className="w-10 h-10 sm:w-20 sm:h-20 fill-current" />
+                <Pause className="w-7 h-7 sm:w-10 sm:h-10 fill-current" />
               ) : (
-                <Play className="w-10 h-10 sm:w-20 sm:h-20 fill-current ml-1 sm:ml-2" />
+                <Play className="w-7 h-7 sm:w-10 sm:h-10 fill-current ml-0.5" />
               )}
             </button>
 
             {/* Forward 10s Button */}
             <button
               type="button"
-              onClick={() => seekBy(10)}
-              className="kutumbam-focus min-h-[64px] sm:min-h-[96px] min-w-[64px] sm:min-w-[96px] p-3 sm:p-5 rounded-full bg-black/80 hover:bg-zinc-800 border-4 border-white text-white flex flex-col items-center justify-center shadow-xl active:scale-90"
+              onClick={(e) => {
+                e.stopPropagation();
+                seekBy(10);
+              }}
+              className="kutumbam-focus w-11 h-11 sm:w-16 sm:h-16 rounded-full bg-black/60 hover:bg-black/80 border-2 border-white/80 text-white flex flex-col items-center justify-center shadow-xl active:scale-90 backdrop-blur-sm transition-transform"
               data-nav-item="true"
               aria-label="Forward 10s · 10 సెకన్లు ముందుకు"
             >
-              <RotateCw className="w-7 h-7 sm:w-12 sm:h-12" />
-              <span className="text-xs sm:text-[var(--text-min)] font-extrabold mt-0.5 sm:mt-1">10s</span>
+              <RotateCw className="w-5 h-5 sm:w-7 sm:h-7" />
+              <span className="text-[9px] sm:text-xs font-black tracking-tight leading-none mt-0.5">10s</span>
             </button>
           </div>
 
-          {/* Bottom Bar: Netflix / YouTube Timeline & Big Action Controls */}
-          <div className="space-y-3 sm:space-y-4 pointer-events-auto bg-black/85 backdrop-blur-md p-3.5 sm:p-6 rounded-2xl sm:rounded-3xl border-2 border-zinc-800 shadow-2xl">
+          {/* Bottom Bar: Timeline & Sleek Action Controls */}
+          <div
+            className="w-full pointer-events-auto space-y-2 sm:space-y-3 bg-gradient-to-t from-black/95 via-black/75 to-transparent pt-6 pb-3 sm:pb-5 px-3 sm:px-6"
+            onClick={(e) => e.stopPropagation()}
+          >
             {/* Netflix / YouTube Interactive Timeline Scrubber */}
-            <div className="relative w-full pt-2 pb-1">
+            <div className="relative w-full pt-1 pb-1">
               <div
                 ref={timelineRef}
                 role="slider"
@@ -805,12 +868,12 @@ export default function WatchPlayerPage() {
                     seekBy(10);
                   }
                 }}
-                className="group relative flex items-center w-full h-8 sm:h-10 cursor-pointer touch-none select-none focus:outline-none focus-visible:ring-4 focus-visible:ring-yellow-400 rounded-full"
+                className="group relative flex items-center w-full h-7 sm:h-9 cursor-pointer touch-none select-none focus:outline-none focus-visible:ring-3 focus-visible:ring-yellow-400 rounded-full"
               >
                 {/* Time Preview Tooltip (Floating bubble like YouTube/Netflix) */}
                 {(hoverTime !== null || isScrubbing) && (
                   <div
-                    className="absolute -top-11 -translate-x-1/2 px-3 py-1 bg-black/95 text-yellow-300 border-2 border-yellow-400 rounded-lg text-xs sm:text-sm font-bold font-mono shadow-2xl pointer-events-none z-30 transition-opacity whitespace-nowrap after:content-[''] after:absolute after:top-full after:left-1/2 after:-translate-x-1/2 after:border-4 after:border-transparent after:border-t-yellow-400"
+                    className="absolute -top-10 -translate-x-1/2 px-2.5 py-0.5 bg-black/95 text-yellow-300 border-2 border-yellow-400 rounded-lg text-xs font-bold font-mono shadow-2xl pointer-events-none z-30 transition-opacity whitespace-nowrap after:content-[''] after:absolute after:top-full after:left-1/2 after:-translate-x-1/2 after:border-4 after:border-transparent after:border-t-yellow-400"
                     style={{
                       left: `${Math.max(
                         6,
@@ -830,7 +893,7 @@ export default function WatchPlayerPage() {
                 )}
 
                 {/* Track Rail: expands on hover or scrubbing */}
-                <div className="relative w-full h-2.5 sm:h-3 group-hover:h-3.5 sm:group-hover:h-4 group-focus-visible:h-3.5 bg-white/20 rounded-full transition-all duration-150 overflow-visible">
+                <div className="relative w-full h-2 sm:h-2.5 group-hover:h-3 sm:group-hover:h-3.5 group-focus-visible:h-3 bg-white/25 rounded-full transition-all duration-150 overflow-visible">
                   {/* Buffered Progress Bar (soft translucent white) */}
                   <div
                     className="absolute left-0 top-0 bottom-0 bg-white/40 rounded-full transition-all duration-200 pointer-events-none"
@@ -857,9 +920,9 @@ export default function WatchPlayerPage() {
 
                   {/* Scrubber Knob / Thumb: Sits at leading edge of played bar */}
                   <div
-                    className={`absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4.5 h-4.5 sm:w-6 sm:h-6 rounded-full bg-yellow-400 border-2 sm:border-3 border-white shadow-xl pointer-events-none transition-transform duration-150 ${
+                    className={`absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3.5 h-3.5 sm:w-5 sm:h-5 rounded-full bg-yellow-400 border-2 border-white shadow-xl pointer-events-none transition-transform duration-150 ${
                       isScrubbing
-                        ? "scale-135 ring-4 ring-yellow-400/50"
+                        ? "scale-125 ring-3 ring-yellow-400/50"
                         : "scale-100 group-hover:scale-125"
                     }`}
                     style={{
@@ -875,34 +938,55 @@ export default function WatchPlayerPage() {
             </div>
 
             {/* Large Digits & Right-hand Action Controls */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              {/* Large Digits */}
-              <div className="text-base sm:text-[var(--text-heading)] font-extrabold font-mono text-yellow-300 tracking-wider">
+            <div className="flex items-center justify-between gap-2">
+              {/* Digits */}
+              <div className="text-xs sm:text-base font-bold font-mono text-yellow-300 tracking-wider">
                 <span>{formatTime(currentTime)}</span>
-                <span className="text-zinc-500 mx-2 sm:mx-3">/</span>
+                <span className="text-zinc-500 mx-1.5 sm:mx-2">/</span>
                 <span className="text-zinc-300">{formatTime(duration)}</span>
               </div>
 
-              {/* Action Controls: Fullscreen */}
-              <div className="flex items-center gap-2 sm:gap-4">
+              {/* Action Controls: Fit & Fullscreen */}
+              <div className="flex items-center gap-2 sm:gap-3">
+                {/* Screen Fit Toggle Button */}
+                <button
+                  type="button"
+                  onClick={toggleVideoFit}
+                  className="kutumbam-focus min-h-[38px] sm:min-h-[46px] px-2.5 sm:px-4 rounded-xl border-2 font-bold flex items-center gap-1.5 transition-all justify-center shadow-md active:scale-95 bg-zinc-800/90 hover:bg-zinc-700 border-zinc-500 text-white"
+                  data-nav-item="true"
+                  aria-label={videoFit === "contain" ? "Fill Screen · పూర్తిగా నింపు" : "Original Fit · అసలు పరిమాణం"}
+                >
+                  {videoFit === "contain" ? (
+                    <Expand className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
+                  ) : (
+                    <Shrink className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
+                  )}
+                  <span className="text-xs sm:text-sm font-semibold">
+                    <Bi k={videoFit === "contain" ? "fitFill" : "fitOriginal"} />
+                  </span>
+                </button>
+
                 {/* Fullscreen Button */}
                 <button
                   type="button"
-                  onClick={toggleFullscreen}
-                  className={`kutumbam-focus min-h-[52px] sm:min-h-[64px] px-5 sm:px-8 rounded-xl sm:rounded-2xl border-4 font-bold flex items-center gap-2 sm:gap-3 transition-all flex-1 sm:flex-initial justify-center shadow-lg active:scale-95 ${
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleFullscreen();
+                  }}
+                  className={`kutumbam-focus min-h-[38px] sm:min-h-[46px] px-2.5 sm:px-4 rounded-xl border-2 font-bold flex items-center gap-1.5 transition-all justify-center shadow-md active:scale-95 ${
                     isFullscreen
                       ? "bg-yellow-400 text-black border-white"
-                      : "bg-zinc-800 hover:bg-zinc-700 border-zinc-500 text-white"
+                      : "bg-zinc-800/90 hover:bg-zinc-700 border-zinc-500 text-white"
                   }`}
                   data-nav-item="true"
                   aria-label={isFullscreen ? "Exit Fullscreen · స్క్రీన్ సాధారణ పరిమాణం" : "Fullscreen · పూర్తి స్క్రీన్"}
                 >
                   {isFullscreen ? (
-                    <Minimize className="w-5 h-5 sm:w-8 sm:h-8 shrink-0" />
+                    <Minimize className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
                   ) : (
-                    <Maximize className="w-5 h-5 sm:w-8 sm:h-8 shrink-0" />
+                    <Maximize className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
                   )}
-                  <span className="text-sm sm:text-[var(--text-btn)]">
+                  <span className="text-xs sm:text-sm font-semibold">
                     <Bi k={isFullscreen ? "exitFullscreen" : "fullscreen"} />
                   </span>
                 </button>
