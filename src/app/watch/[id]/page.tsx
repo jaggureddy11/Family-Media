@@ -495,7 +495,6 @@ export default function WatchPlayerPage() {
           playsInline
           controls={false}
           disablePictureInPicture
-          // @ts-expect-error controlsList non-standard attribute
           controlsList="nodownload nofullscreen noremoteplayback"
           crossOrigin="anonymous"
           onLoadedMetadata={handleLoadedMetadata}

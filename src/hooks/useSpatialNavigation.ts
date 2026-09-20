@@ -83,7 +83,7 @@ export function useSpatialNavigation({
       if (items.length === 0) return;
 
       const currentElement = document.activeElement as HTMLElement | null;
-      let currentIndex = currentElement ? items.indexOf(currentElement) : -1;
+      const currentIndex = currentElement ? items.indexOf(currentElement) : -1;
 
       // If nothing is focused yet, focus the first item
       if (currentIndex === -1) {

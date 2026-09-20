@@ -11,10 +11,10 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "hash-passphrase": "npx tsx scripts/hash-passphrase.ts",
-    "secret-scan": "npx tsx scripts/secret-scan.ts",
-    "smoke": "npx tsx scripts/smoke-test.ts",
-    "upload-movie": "npx tsx scripts/upload-movie.ts"
+    "hash-passphrase": "tsx scripts/hash-passphrase.ts",
+    "secret-scan": "tsx scripts/secret-scan.ts",
+    "smoke": "tsx scripts/smoke-test.ts",
+    "upload-movie": "tsx scripts/upload-movie.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1135.0",
@@ -48,6 +48,7 @@
     "prettier": "^3.9.8",
     "prisma": "^6.19.3",
     "tailwindcss": "^4",
+    "tsx": "^4.19.3",
     "typescript": "^5",
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.1.11"

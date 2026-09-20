@@ -491,7 +491,7 @@ export default function AdminUploadPage() {
           <input
             ref={folderInputRef}
             type="file"
-            // @ts-ignore
+            // @ts-expect-error webkitdirectory non-standard attribute
             webkitdirectory="true"
             directory="true"
             multiple

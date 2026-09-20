@@ -189,7 +189,7 @@ export async function GET(request: NextRequest) {
     }
 
     // TAB: TIMELINE (DEFAULT)
-    let whereClause: any = {
+    const whereClause: any = {
       type: { in: ["PHOTO", "FAMILY_VIDEO"] },
       status: "READY",
     };

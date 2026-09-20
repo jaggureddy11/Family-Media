@@ -1,12 +1,15 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { notoSansTelugu, inter } from "./fonts";
 import "./globals.css";
+
+export const viewport: Viewport = {
+  themeColor: "#facc15",
+};
 
 export const metadata: Metadata = {
   title: "Kutumbam · కుటుంబం",
   description: "Private Telugu & English family media archive and streaming",
   manifest: "/manifest.json",
-  themeColor: "#facc15",
   robots: {
     index: false,
     follow: false,

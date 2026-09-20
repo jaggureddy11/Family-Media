@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
 
     // Retrieve user's favorite movie IDs if user is logged in
     let userFavoriteIds = new Set<string>();
-    let userWatchProgressMap = new Map<string, any>();
+    const userWatchProgressMap = new Map<string, any>();
 
     if (userId) {
       const favorites = await prisma.favorite.findMany({
