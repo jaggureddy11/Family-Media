@@ -3,6 +3,18 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getStorageProvider } from "@/lib/storage";
 
+async function withDbRetry<T>(fn: () => Promise<T>, retries = 2, delayMs = 1000): Promise<T> {
+  try {
+    return await fn();
+  } catch (err: any) {
+    if (retries > 0) {
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+      return withDbRetry(fn, retries - 1, delayMs * 1.5);
+    }
+    throw err;
+  }
+}
+
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
@@ -12,9 +24,11 @@ export async function GET(
   const userId = session?.user?.id;
 
   try {
-    const item = await prisma.mediaItem.findUnique({
-      where: { id },
-    });
+    const item: any = await withDbRetry(() =>
+      prisma.mediaItem.findUnique({
+        where: { id },
+      })
+    );
 
     if (!item) {
       return NextResponse.json({ error: "Media item not found" }, { status: 404 });
@@ -50,20 +64,26 @@ export async function GET(
     // Retrieve watch progress for current user
     let progress = null;
     if (userId) {
-      const wp = await prisma.watchProgress.findUnique({
-        where: {
-          userId_mediaItemId: {
-            userId,
-            mediaItemId: id,
-          },
-        },
-      });
-      if (wp) {
-        progress = {
-          positionSeconds: wp.positionSeconds,
-          durationSeconds: wp.durationSeconds,
-          isCompleted: wp.isCompleted,
-        };
+      try {
+        const wp: any = await withDbRetry(() =>
+          prisma.watchProgress.findUnique({
+            where: {
+              userId_mediaItemId: {
+                userId,
+                mediaItemId: id,
+              },
+            },
+          })
+        );
+        if (wp) {
+          progress = {
+            positionSeconds: wp.positionSeconds,
+            durationSeconds: wp.durationSeconds,
+            isCompleted: wp.isCompleted,
+          };
+        }
+      } catch (e) {
+        console.warn("Watch progress lookup non-fatal error:", e);
       }
     }
 

@@ -69,6 +69,12 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // If media was marked with a failureReason previously, clear it once progress is successfully logged
+    await prisma.mediaItem.updateMany({
+      where: { id: mediaItemId, failureReason: { not: null } },
+      data: { failureReason: null },
+    });
+
     return NextResponse.json({
       success: true,
       mediaItemId,
