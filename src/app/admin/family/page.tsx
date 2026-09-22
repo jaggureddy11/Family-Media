@@ -130,11 +130,12 @@ export default function AdminFamilyPage() {
       headerAction={
         <Link
           href="/admin/devices"
-          className="kutumbam-focus min-h-[56px] sm:min-h-[80px] px-3 sm:px-6 py-1 bg-[var(--bg-surface-elevated)] border-4 border-[var(--border-subtle)] hover:border-white rounded-3xl flex items-center gap-2 text-[var(--text-min)] font-bold"
+          className="kutumbam-focus min-h-[42px] sm:min-h-[80px] px-2.5 sm:px-6 py-1 bg-[var(--bg-surface-elevated)] border-2 sm:border-4 border-[var(--border-subtle)] hover:border-white rounded-xl sm:rounded-3xl flex items-center gap-1.5 sm:gap-2 text-xs sm:text-[var(--text-min)] font-bold shrink-0"
           data-nav-item="true"
+          aria-label="Active Devices · క్రియాశీల పరికరాలు"
         >
-          <Laptop className="w-6 h-6 text-yellow-300" />
-          <Bi k="activeDevices" />
+          <Laptop className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-300" />
+          <span className="hidden sm:inline"><Bi k="activeDevices" /></span>
         </Link>
       }
       navItems={[
@@ -144,10 +145,10 @@ export default function AdminFamilyPage() {
         { key: "installGuide", href: "/admin/install" },
       ]}
     >
-      <div className="flex flex-col gap-12 pb-16">
+      <div className="flex flex-col gap-8 sm:gap-12 pb-16">
         {/* Generated Link Modal / Card */}
         {generatedLink && (
-          <div className="p-6 sm:p-10 bg-yellow-950/40 border-4 border-yellow-400 rounded-3xl flex flex-col items-center text-center gap-6 shadow-2xl">
+          <div className="p-4 sm:p-10 bg-yellow-950/40 border-4 border-yellow-400 rounded-2xl sm:rounded-3xl flex flex-col items-center text-center gap-4 sm:gap-6 shadow-2xl">
             <h2 className="text-[var(--text-heading)] font-bold text-yellow-300">
               <Bi k="deviceLinkCreated" layout="stacked" />
             </h2>
@@ -156,36 +157,36 @@ export default function AdminFamilyPage() {
             </p>
 
             {/* QR Code */}
-            <div className="p-4 bg-white rounded-2xl shadow-lg inline-block">
+            <div className="p-3 sm:p-4 bg-white rounded-2xl shadow-lg inline-block">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={generatedLink.qrDataUrl}
                 alt="Device link QR code"
-                className="w-56 h-56 sm:w-72 sm:h-72 object-contain"
+                className="w-44 h-44 sm:w-72 sm:h-72 object-contain"
               />
             </div>
 
             {/* Link Text Box */}
-            <div className="w-full max-w-xl p-4 bg-black/80 border-2 border-slate-700 rounded-2xl break-all font-mono text-base sm:text-lg text-yellow-200 select-all">
+            <div className="w-full max-w-xl p-3 sm:p-4 bg-black/80 border-2 border-slate-700 rounded-xl sm:rounded-2xl break-all font-mono text-xs sm:text-base text-yellow-200 select-all">
               {generatedLink.linkUrl}
             </div>
 
             {/* Actions */}
-            <div className="flex flex-col sm:flex-row gap-4 w-full max-w-xl">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full max-w-xl">
               <button
                 type="button"
                 onClick={copyToClipboard}
-                className="kutumbam-focus flex-1 min-h-[72px] px-6 py-3 bg-[var(--accent)] hover:bg-yellow-400 !text-black font-bold border-4 border-white rounded-2xl flex items-center justify-center gap-3 text-[var(--text-body)] cursor-pointer"
+                className="kutumbam-focus flex-1 min-h-[56px] sm:min-h-[72px] px-4 sm:px-6 py-3 bg-[var(--accent)] hover:bg-yellow-400 !text-black font-bold border-4 border-white rounded-2xl flex items-center justify-center gap-2 sm:gap-3 text-base sm:text-[var(--text-body)] cursor-pointer"
                 data-nav-item="true"
               >
                 {copied ? (
                   <>
-                    <Check className="w-8 h-8 text-green-900" />
+                    <Check className="w-6 h-6 sm:w-8 sm:h-8 text-green-900" />
                     <Bi k="copied" />
                   </>
                 ) : (
                   <>
-                    <Copy className="w-8 h-8" />
+                    <Copy className="w-6 h-6 sm:w-8 sm:h-8" />
                     <Bi k="copyLink" />
                   </>
                 )}
@@ -197,10 +198,10 @@ export default function AdminFamilyPage() {
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="kutumbam-focus flex-1 min-h-[72px] px-6 py-3 bg-green-700 hover:bg-green-600 text-white font-bold border-4 border-green-400 rounded-2xl flex items-center justify-center gap-3 text-[var(--text-body)] cursor-pointer"
+                className="kutumbam-focus flex-1 min-h-[56px] sm:min-h-[72px] px-4 sm:px-6 py-3 bg-green-700 hover:bg-green-600 text-white font-bold border-4 border-green-400 rounded-2xl flex items-center justify-center gap-2 sm:gap-3 text-base sm:text-[var(--text-body)] cursor-pointer"
                 data-nav-item="true"
               >
-                <MessageSquare className="w-8 h-8 text-white" />
+                <MessageSquare className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
                 <Bi k="sendViaWhatsApp" />
               </a>
             </div>
@@ -208,7 +209,7 @@ export default function AdminFamilyPage() {
             <button
               type="button"
               onClick={() => setGeneratedLink(null)}
-              className="kutumbam-focus min-h-[56px] px-8 py-2 bg-slate-800 text-slate-300 hover:text-white border-2 border-slate-600 rounded-2xl text-[var(--text-body)]"
+              className="kutumbam-focus min-h-[48px] sm:min-h-[56px] px-6 sm:px-8 py-2 bg-slate-800 text-slate-300 hover:text-white border-2 border-slate-600 rounded-xl sm:rounded-2xl text-base sm:text-[var(--text-body)]"
               data-nav-item="true"
             >
               <Bi k="close" />
@@ -217,13 +218,13 @@ export default function AdminFamilyPage() {
         )}
 
         {/* Add Member Form */}
-        <section className="bg-[var(--bg-surface)] border-4 border-[var(--border-subtle)] p-6 sm:p-10 rounded-3xl flex flex-col gap-6">
+        <section className="bg-[var(--bg-surface)] border-4 border-[var(--border-subtle)] p-4 sm:p-10 rounded-2xl sm:rounded-3xl flex flex-col gap-6">
           <h2 className="text-[var(--text-heading)] font-bold text-yellow-300 flex items-center gap-3">
-            <UserPlus className="w-10 h-10" />
+            <UserPlus className="w-8 h-8 sm:w-10 sm:h-10" />
             <Bi k="addFamilyMember" />
           </h2>
 
-          <form onSubmit={handleAddMember} className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <form onSubmit={handleAddMember} className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             <div className="flex flex-col gap-2">
               <label className="text-[var(--text-body)] font-semibold text-slate-200">
                 English Name (e.g. Amma)
@@ -234,7 +235,7 @@ export default function AdminFamilyPage() {
                 onChange={(e) => setNameEn(e.target.value)}
                 placeholder="Amma"
                 required
-                className="kutumbam-focus min-h-[64px] px-4 text-[var(--text-body)] bg-[var(--bg-surface-elevated)] text-white border-4 border-[var(--border-thick)] rounded-2xl font-sans"
+                className="kutumbam-focus min-h-[56px] sm:min-h-[64px] px-4 text-[var(--text-body)] bg-[var(--bg-surface-elevated)] text-white border-4 border-[var(--border-thick)] rounded-2xl font-sans"
                 data-nav-item="true"
               />
             </div>
@@ -249,7 +250,7 @@ export default function AdminFamilyPage() {
                 onChange={(e) => setNameTe(e.target.value)}
                 placeholder="అమ్మా"
                 required
-                className="kutumbam-focus min-h-[64px] px-4 text-[var(--text-body)] bg-[var(--bg-surface-elevated)] text-white border-4 border-[var(--border-thick)] rounded-2xl font-telugu"
+                className="kutumbam-focus min-h-[56px] sm:min-h-[64px] px-4 text-[var(--text-body)] bg-[var(--bg-surface-elevated)] text-white border-4 border-[var(--border-thick)] rounded-2xl font-telugu"
                 data-nav-item="true"
               />
             </div>
@@ -277,33 +278,33 @@ export default function AdminFamilyPage() {
             {users.map((u) => (
               <div
                 key={u.id}
-                className="p-6 bg-[var(--bg-surface-elevated)] border-4 border-[var(--border-subtle)] rounded-3xl flex flex-col justify-between gap-6"
+                className="p-4 sm:p-6 bg-[var(--bg-surface-elevated)] border-4 border-[var(--border-subtle)] rounded-2xl sm:rounded-3xl flex flex-col justify-between gap-6"
               >
                 <div className="space-y-4">
                   <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                      <div className="w-16 h-16 rounded-full bg-slate-800 border-2 border-yellow-400 flex items-center justify-center text-yellow-300">
-                        <UserIcon className="w-10 h-10" />
+                    <div className="flex items-center gap-3 sm:gap-4">
+                      <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-slate-800 border-2 border-yellow-400 flex items-center justify-center text-yellow-300 shrink-0">
+                        <UserIcon className="w-8 h-8 sm:w-10 sm:h-10" />
                       </div>
                       <div>
                         <h3 className="text-[var(--text-heading)] font-bold text-white">
                           <Bi text={{ en: u.name_en, te: u.name_te }} layout="auto" />
                         </h3>
-                        <span className="text-sm font-semibold uppercase px-3 py-1 bg-slate-800 text-yellow-300 rounded-full border border-slate-600 inline-block mt-1">
+                        <span className="text-xs sm:text-sm font-semibold uppercase px-2.5 sm:px-3 py-0.5 sm:py-1 bg-slate-800 text-yellow-300 rounded-full border border-slate-600 inline-block mt-1">
                           {u.role}
                         </span>
                       </div>
                     </div>
 
-                    <span className="text-slate-400 text-[var(--text-body)]">
+                    <span className="text-slate-400 text-sm sm:text-[var(--text-body)]">
                       {u.devices.length} {u.devices.length === 1 ? "device" : "devices"}
                     </span>
                   </div>
 
                   {/* Accessibility & Visual Preferences per Profile */}
-                  <div className="bg-black/40 border-2 border-zinc-700 rounded-2xl p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-lg font-bold text-zinc-300">
+                  <div className="bg-black/40 border-2 border-zinc-700 rounded-2xl p-3 sm:p-4 space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <span className="text-base sm:text-lg font-bold text-zinc-300">
                         <Bi en="Text Scale" te="అక్షరాల పరిమాణం" />
                       </span>
                       <select
@@ -311,7 +312,7 @@ export default function AdminFamilyPage() {
                         onChange={(e) =>
                           handleUpdateProfile(u.id, { textSize: e.target.value })
                         }
-                        className="bg-zinc-800 border-2 border-zinc-600 text-yellow-400 font-bold px-3 py-2 rounded-xl text-base focus:border-yellow-400 focus:outline-none"
+                        className="bg-zinc-800 border-2 border-zinc-600 text-yellow-400 font-bold px-3 py-2 rounded-xl text-sm sm:text-base focus:border-yellow-400 focus:outline-none"
                       >
                         <option value="LARGE">Large (1.0x)</option>
                         <option value="EXTRA_LARGE">Extra Large (1.25x - Default)</option>
@@ -319,8 +320,8 @@ export default function AdminFamilyPage() {
                       </select>
                     </div>
 
-                    <div className="flex items-center justify-between">
-                      <span className="text-lg font-bold text-zinc-300">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <span className="text-base sm:text-lg font-bold text-zinc-300">
                         <Bi en="High Contrast Theme" te="అధిక కాంట్రాస్ట్" />
                       </span>
                       <button
@@ -328,7 +329,7 @@ export default function AdminFamilyPage() {
                         onClick={() =>
                           handleUpdateProfile(u.id, { highContrast: !u.highContrast })
                         }
-                        className={`px-4 py-1.5 rounded-xl text-base font-bold border-2 transition-colors ${
+                        className={`px-3 sm:px-4 py-1.5 rounded-xl text-sm sm:text-base font-bold border-2 transition-colors ${
                           u.highContrast
                             ? "bg-yellow-400 text-black border-yellow-300"
                             : "bg-zinc-800 text-zinc-300 border-zinc-600"

@@ -196,52 +196,52 @@ export const MediaViewer: React.FC<MediaViewerProps> = ({
       onTouchEnd={handleTouchEnd}
     >
       {/* Top Header Bar */}
-      <header className="relative z-20 flex items-center justify-between p-3 sm:p-6 bg-gradient-to-b from-black via-black/80 to-transparent">
+      <header className="relative z-20 flex items-center justify-between p-2.5 sm:p-6 bg-gradient-to-b from-black via-black/80 to-transparent gap-2">
         {/* Back Button */}
         <button
           type="button"
           onClick={onClose}
-          className="min-h-[56px] sm:min-h-[72px] px-4 sm:px-8 py-2 sm:py-3 bg-slate-900/90 hover:bg-slate-800 text-white rounded-2xl border-4 border-slate-700 hover:border-amber-400 font-bold text-xl sm:text-3xl flex items-center gap-2 sm:gap-3 transition-all focus:ring-4 focus:ring-amber-400 shrink-0"
+          className="min-h-[44px] sm:min-h-[72px] px-3 sm:px-8 py-1.5 sm:py-3 bg-slate-900/90 hover:bg-slate-800 text-white rounded-2xl border-3 sm:border-4 border-slate-700 hover:border-amber-400 font-bold text-base sm:text-3xl flex items-center gap-1.5 sm:gap-3 transition-all focus:ring-4 focus:ring-amber-400 shrink-0"
           aria-label="Back, వెనుకకు"
         >
-          <span className="text-2xl sm:text-3xl">←</span>
+          <span className="text-xl sm:text-3xl">←</span>
           <span className="hidden xs:inline">
             <Bi stringKey="back" />
           </span>
         </button>
 
         {/* Friendly Bilingual Date Header (No tech metadata) */}
-        <div className="text-center px-2 sm:px-4 flex-1 min-w-0">
+        <div className="text-center px-1 sm:px-4 flex-1 min-w-0">
           {dateObj ? (
-            <div className="font-bold text-base sm:text-2xl text-amber-400 truncate">
+            <div className="font-bold text-xs sm:text-2xl text-amber-400 truncate">
               <span>{dateObj.en}</span>
               <span className="mx-1 sm:mx-2 text-slate-500">·</span>
               <span className="text-white">{dateObj.te}</span>
             </div>
           ) : (
-            <div className="font-bold text-base sm:text-2xl text-white truncate">
+            <div className="font-bold text-xs sm:text-2xl text-white truncate">
               {currentItem.title_en} · {currentItem.title_te}
             </div>
           )}
-          <div className="text-xs sm:text-base text-slate-400 mt-0.5 font-mono">
+          <div className="text-[11px] sm:text-base text-slate-400 mt-0.5 font-mono">
             {currentIndex + 1} / {items.length}
           </div>
         </div>
 
         {/* Slideshow & Favorite Controls */}
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
           {/* Slideshow Toggle */}
           <button
             type="button"
             onClick={() => setIsSlideshow((prev) => !prev)}
-            className={`min-h-[56px] sm:min-h-[72px] px-3.5 sm:px-6 py-2 sm:py-3 rounded-2xl border-4 font-bold text-lg sm:text-2xl flex items-center gap-2 transition-all focus:ring-4 focus:ring-amber-400 ${
+            className={`min-h-[44px] sm:min-h-[72px] px-3 sm:px-6 py-1.5 sm:py-3 rounded-2xl border-3 sm:border-4 font-bold text-sm sm:text-2xl flex items-center gap-1.5 sm:gap-2 transition-all focus:ring-4 focus:ring-amber-400 ${
               isSlideshow
                 ? "bg-amber-400 text-black border-amber-300 shadow-lg shadow-amber-400/30"
                 : "bg-slate-900/90 text-white border-slate-700 hover:border-amber-400"
             }`}
             aria-label={isSlideshow ? "Pause Slideshow" : "Start Slideshow"}
           >
-            <span className="text-xl sm:text-2xl">{isSlideshow ? "⏸" : "▶"}</span>
+            <span className="text-lg sm:text-2xl">{isSlideshow ? "⏸" : "▶"}</span>
             <span className="hidden md:inline">
               <Bi stringKey={isSlideshow ? "pauseSlideshow" : "startSlideshow"} />
             </span>
@@ -251,14 +251,14 @@ export const MediaViewer: React.FC<MediaViewerProps> = ({
           <button
             type="button"
             onClick={toggleFavorite}
-            className={`min-h-[56px] sm:min-h-[72px] px-3.5 sm:px-6 py-2 sm:py-3 rounded-2xl border-4 font-bold text-lg sm:text-2xl flex items-center gap-2 transition-all focus:ring-4 focus:ring-amber-400 ${
+            className={`min-h-[44px] sm:min-h-[72px] px-3 sm:px-6 py-1.5 sm:py-3 rounded-2xl border-3 sm:border-4 font-bold text-sm sm:text-2xl flex items-center gap-1.5 sm:gap-2 transition-all focus:ring-4 focus:ring-amber-400 ${
               isFavorited
                 ? "bg-rose-600 text-white border-rose-400 shadow-lg shadow-rose-600/40 scale-105"
                 : "bg-slate-900/90 text-white border-slate-700 hover:border-rose-400"
             }`}
             aria-label={isFavorited ? "Remove from Favorites" : "Add to Favorites"}
           >
-            <span className="text-xl sm:text-2xl">{isFavorited ? "❤️" : "🤍"}</span>
+            <span className="text-lg sm:text-2xl">{isFavorited ? "❤️" : "🤍"}</span>
             <span className="hidden md:inline">
               <Bi stringKey="favorite" />
             </span>
@@ -324,13 +324,13 @@ export const MediaViewer: React.FC<MediaViewerProps> = ({
           </div>
         )}
 
-        {/* Desktop / TV Floating Left & Right Navigation Arrows */}
+        {/* Desktop / TV Floating Left & Right Navigation Arrows (hidden on small mobile to not block photos) */}
         {items.length > 1 && (
           <>
             <button
               type="button"
               onClick={handlePrev}
-              className="absolute left-4 sm:left-8 top-1/2 -translate-y-1/2 min-h-[80px] min-w-[80px] sm:min-h-[88px] sm:min-w-[88px] bg-black/80 hover:bg-black text-amber-400 border-4 border-slate-700 hover:border-amber-400 rounded-3xl flex items-center justify-center text-4xl sm:text-5xl font-extrabold shadow-2xl transition-all active:scale-90 focus:ring-4 focus:ring-amber-400 z-20"
+              className="hidden md:flex absolute left-4 sm:left-8 top-1/2 -translate-y-1/2 min-h-[72px] min-w-[72px] sm:min-h-[88px] sm:min-w-[88px] bg-black/80 hover:bg-black text-amber-400 border-4 border-slate-700 hover:border-amber-400 rounded-3xl items-center justify-center text-3xl sm:text-5xl font-extrabold shadow-2xl transition-all active:scale-90 focus:ring-4 focus:ring-amber-400 z-20"
               aria-label="Previous, వెనుకటిది"
             >
               ←
@@ -338,7 +338,7 @@ export const MediaViewer: React.FC<MediaViewerProps> = ({
             <button
               type="button"
               onClick={handleNext}
-              className="absolute right-4 sm:right-8 top-1/2 -translate-y-1/2 min-h-[80px] min-w-[80px] sm:min-h-[88px] sm:min-w-[88px] bg-black/80 hover:bg-black text-amber-400 border-4 border-slate-700 hover:border-amber-400 rounded-3xl flex items-center justify-center text-4xl sm:text-5xl font-extrabold shadow-2xl transition-all active:scale-90 focus:ring-4 focus:ring-amber-400 z-20"
+              className="hidden md:flex absolute right-4 sm:right-8 top-1/2 -translate-y-1/2 min-h-[72px] min-w-[72px] sm:min-h-[88px] sm:min-w-[88px] bg-black/80 hover:bg-black text-amber-400 border-4 border-slate-700 hover:border-amber-400 rounded-3xl items-center justify-center text-3xl sm:text-5xl font-extrabold shadow-2xl transition-all active:scale-90 focus:ring-4 focus:ring-amber-400 z-20"
               aria-label="Next, తదుపరిది"
             >
               →
@@ -348,11 +348,11 @@ export const MediaViewer: React.FC<MediaViewerProps> = ({
       </main>
 
       {/* Bottom Big Touch Action Bar */}
-      <footer className="p-4 sm:p-6 bg-gradient-to-t from-black via-black/80 to-transparent flex items-center justify-between gap-4 z-10">
+      <footer className="p-3 sm:p-6 bg-gradient-to-t from-black via-black/80 to-transparent flex items-center justify-between gap-3 sm:gap-4 z-10">
         <button
           type="button"
           onClick={handlePrev}
-          className="flex-1 min-h-[72px] sm:min-h-[88px] py-4 px-6 bg-slate-900/90 hover:bg-slate-800 text-white rounded-3xl border-4 border-slate-700 hover:border-amber-400 font-extrabold text-2xl sm:text-3xl flex items-center justify-center gap-3 transition-all active:scale-95 focus:ring-4 focus:ring-amber-400"
+          className="flex-1 min-h-[64px] sm:min-h-[88px] py-3 sm:py-4 px-4 sm:px-6 bg-slate-900/90 hover:bg-slate-800 text-white rounded-2xl sm:rounded-3xl border-3 sm:border-4 border-slate-700 hover:border-amber-400 font-extrabold text-xl sm:text-3xl flex items-center justify-center gap-2 sm:gap-3 transition-all active:scale-95 focus:ring-4 focus:ring-amber-400"
           aria-label="Previous, వెనుకటిది"
         >
           <span>←</span>
@@ -369,7 +369,7 @@ export const MediaViewer: React.FC<MediaViewerProps> = ({
         <button
           type="button"
           onClick={handleNext}
-          className="flex-1 min-h-[72px] sm:min-h-[88px] py-4 px-6 bg-amber-400 hover:bg-amber-300 text-black rounded-3xl border-4 border-amber-200 font-extrabold text-2xl sm:text-3xl flex items-center justify-center gap-3 transition-all active:scale-95 focus:ring-4 focus:ring-amber-300"
+          className="flex-1 min-h-[64px] sm:min-h-[88px] py-3 sm:py-4 px-4 sm:px-6 bg-amber-400 hover:bg-amber-300 text-black rounded-2xl sm:rounded-3xl border-3 sm:border-4 border-amber-200 font-extrabold text-xl sm:text-3xl flex items-center justify-center gap-2 sm:gap-3 transition-all active:scale-95 focus:ring-4 focus:ring-amber-300"
           aria-label="Next, తదుపరిది"
         >
           <Bi stringKey="next" />

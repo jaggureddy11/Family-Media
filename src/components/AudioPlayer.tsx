@@ -87,21 +87,21 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
         />
 
         {/* Header Title */}
-        <div className="text-center w-full mb-8">
-          <div className="text-amber-400 text-sm font-bold uppercase tracking-wider mb-2">
+        <div className="text-center w-full mb-4 sm:mb-8">
+          <div className="text-amber-400 text-xs sm:text-sm font-bold uppercase tracking-wider mb-1 sm:mb-2">
             <Bi stringKey="audio" />
           </div>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-2">
+          <h2 className="text-2xl sm:text-4xl font-extrabold text-white mb-1 sm:mb-2 truncate">
             {title_en}
           </h2>
-          <h3 className="text-2xl sm:text-3xl font-bold text-amber-300">
+          <h3 className="text-xl sm:text-3xl font-bold text-amber-300 truncate">
             {title_te}
           </h3>
         </div>
 
         {/* Big Animated Vinyl / Speaker Graphic */}
-        <div className="w-36 h-36 rounded-full bg-slate-800 border-4 border-amber-400 flex items-center justify-center mb-8 shadow-inner">
-          <span className={`text-6xl ${isPlaying ? "animate-bounce" : ""}`}>🎵</span>
+        <div className="w-24 h-24 sm:w-36 sm:h-36 rounded-full bg-slate-800 border-3 sm:border-4 border-amber-400 flex items-center justify-center mb-4 sm:mb-8 shadow-inner">
+          <span className={`text-4xl sm:text-6xl ${isPlaying ? "animate-bounce" : ""}`}>🎵</span>
         </div>
 
         {/* Large 24px Seek Bar */}
@@ -115,18 +115,18 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
             className="w-full h-6 rounded-lg appearance-none cursor-pointer bg-slate-700 accent-amber-400 focus:outline-none focus:ring-4 focus:ring-amber-300"
             aria-label="Seek audio"
           />
-          <div className="flex justify-between items-center text-xl sm:text-2xl font-mono font-bold text-slate-300 mt-2">
+          <div className="flex justify-between items-center text-lg sm:text-2xl font-mono font-bold text-slate-300 mt-2">
             <span>{formatTime(currentTime)}</span>
             <span>{formatTime(duration)}</span>
           </div>
         </div>
 
         {/* Giant Play/Pause & Skip Controls */}
-        <div className="flex items-center justify-center gap-4 sm:gap-6 my-4 w-full">
+        <div className="flex items-center justify-center gap-2.5 sm:gap-6 my-2 sm:my-4 w-full">
           <button
             type="button"
             onClick={() => skip(-10)}
-            className="min-h-[72px] min-w-[72px] bg-slate-800 hover:bg-slate-700 text-amber-400 border-4 border-slate-600 rounded-2xl text-2xl font-extrabold flex items-center justify-center transition-transform active:scale-95 focus:ring-4 focus:ring-amber-400"
+            className="min-h-[58px] min-w-[58px] sm:min-h-[72px] sm:min-w-[72px] bg-slate-800 hover:bg-slate-700 text-amber-400 border-2 sm:border-4 border-slate-600 rounded-xl sm:rounded-2xl text-lg sm:text-2xl font-extrabold flex items-center justify-center transition-transform active:scale-95 focus:ring-4 focus:ring-amber-400"
             aria-label="Back 10 seconds"
           >
             -10s
@@ -135,17 +135,17 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
           <button
             type="button"
             onClick={togglePlay}
-            className="min-h-[88px] min-w-[140px] px-8 bg-amber-400 hover:bg-amber-300 text-black border-4 border-amber-200 rounded-3xl text-3xl font-extrabold flex items-center justify-center gap-3 transition-transform active:scale-95 shadow-xl focus:ring-6 focus:ring-amber-300"
+            className="min-h-[72px] sm:min-h-[88px] min-w-[120px] sm:min-w-[140px] px-5 sm:px-8 bg-amber-400 hover:bg-amber-300 text-black border-3 sm:border-4 border-amber-200 rounded-2xl sm:rounded-3xl text-2xl sm:text-3xl font-extrabold flex items-center justify-center gap-2 sm:gap-3 transition-transform active:scale-95 shadow-xl focus:ring-6 focus:ring-amber-300"
             aria-label={isPlaying ? "Pause audio" : "Play audio"}
           >
-            <span className="text-4xl">{isPlaying ? "⏸" : "▶"}</span>
+            <span className="text-3xl sm:text-4xl">{isPlaying ? "⏸" : "▶"}</span>
             <Bi stringKey={isPlaying ? "pause" : "play"} />
           </button>
 
           <button
             type="button"
             onClick={() => skip(10)}
-            className="min-h-[72px] min-w-[72px] bg-slate-800 hover:bg-slate-700 text-amber-400 border-4 border-slate-600 rounded-2xl text-2xl font-extrabold flex items-center justify-center transition-transform active:scale-95 focus:ring-4 focus:ring-amber-400"
+            className="min-h-[58px] min-w-[58px] sm:min-h-[72px] sm:min-w-[72px] bg-slate-800 hover:bg-slate-700 text-amber-400 border-2 sm:border-4 border-slate-600 rounded-xl sm:rounded-2xl text-lg sm:text-2xl font-extrabold flex items-center justify-center transition-transform active:scale-95 focus:ring-4 focus:ring-amber-400"
             aria-label="Forward 10 seconds"
           >
             +10s
@@ -153,12 +153,12 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
         </div>
 
         {/* Action Buttons: Download & Close */}
-        <div className="flex items-center gap-4 mt-6 w-full justify-center">
+        <div className="flex items-center gap-3 sm:gap-4 mt-4 sm:mt-6 w-full justify-center">
           {downloadUrl && (
             <a
               href={downloadUrl}
               download
-              className="min-h-[64px] px-6 py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xl rounded-2xl border-4 border-slate-600 flex items-center gap-2"
+              className="flex-1 sm:flex-initial min-h-[56px] sm:min-h-[64px] px-4 sm:px-6 py-2 sm:py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold text-lg sm:text-xl rounded-2xl border-2 sm:border-4 border-slate-600 flex items-center justify-center gap-2"
             >
               <span>⬇</span>
               <Bi stringKey="download" />
@@ -168,7 +168,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="min-h-[64px] px-8 py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xl rounded-2xl border-4 border-slate-600 hover:border-amber-400"
+            className="flex-1 sm:flex-initial min-h-[56px] sm:min-h-[64px] px-6 sm:px-8 py-2 sm:py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold text-lg sm:text-xl rounded-2xl border-2 sm:border-4 border-slate-600 hover:border-amber-400"
           >
             <Bi stringKey="close" />
           </button>

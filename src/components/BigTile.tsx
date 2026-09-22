@@ -72,9 +72,9 @@ export const BigTile: React.FC<BigTileProps> = ({
         flex flex-col
         w-full
         bg-[var(--bg-surface)]
-        border-4 border-[var(--border-subtle)]
+        border-3 sm:border-4 border-[var(--border-subtle)]
         hover:border-white
-        rounded-3xl
+        rounded-2xl sm:rounded-3xl
         overflow-hidden
         cursor-pointer
         select-none
@@ -97,13 +97,13 @@ export const BigTile: React.FC<BigTileProps> = ({
             className="object-cover group-hover:scale-105 transition-transform duration-300"
           />
         ) : (
-          <div className="flex flex-col items-center justify-center p-6 text-[var(--accent)]">
+          <div className="flex flex-col items-center justify-center p-4 sm:p-6 text-[var(--accent)]">
             {icon ? (
-              <span className="w-20 h-20 flex items-center justify-center">
+              <span className="w-12 h-12 sm:w-20 sm:h-20 flex items-center justify-center">
                 {icon}
               </span>
             ) : (
-              <span className="text-4xl">🎬</span>
+              <span className="text-3xl sm:text-4xl">🎬</span>
             )}
           </div>
         )}
@@ -111,7 +111,7 @@ export const BigTile: React.FC<BigTileProps> = ({
         {/* Watch Progress Bar (if continuing watching) */}
         {typeof progressPercent === "number" && progressPercent > 0 && (
           <div
-            className="absolute bottom-0 left-0 right-0 h-4 bg-black/80 border-t-2 border-slate-700"
+            className="absolute bottom-0 left-0 right-0 h-3 sm:h-4 bg-black/80 border-t-2 border-slate-700"
             role="progressbar"
             aria-label="Watch progress · చూసిన సమయం"
             aria-valuenow={Math.round(progressPercent)}
@@ -127,7 +127,7 @@ export const BigTile: React.FC<BigTileProps> = ({
       </div>
 
       {/* Solid Caption Bar Beneath Thumbnail */}
-      <div className="p-4 sm:p-5 bg-[var(--bg-surface-elevated)] border-t-4 border-[var(--border-subtle)] flex flex-col gap-1.5 min-h-[96px] justify-center">
+      <div className="p-2.5 sm:p-5 bg-[var(--bg-surface-elevated)] border-t-3 sm:border-t-4 border-[var(--border-subtle)] flex flex-col gap-0.5 sm:gap-1.5 min-h-[64px] sm:min-h-[96px] justify-center">
         <Bi
           k={k}
           text={text}
@@ -135,12 +135,12 @@ export const BigTile: React.FC<BigTileProps> = ({
           te={titleTe}
           layout="auto"
           className="w-full text-left"
-          enClassName="text-[1.1em] text-[var(--text-secondary)] font-medium"
-          teClassName="text-[1.35em] text-[var(--text-primary)] font-bold text-yellow-300"
+          enClassName="text-xs sm:text-[1.1em] text-[var(--text-secondary)] font-medium leading-snug line-clamp-1 sm:line-clamp-none"
+          teClassName="text-sm sm:text-[1.35em] text-[var(--text-primary)] font-bold text-yellow-300 leading-snug line-clamp-1 sm:line-clamp-none"
         />
 
         {meta && (
-          <span className="text-[var(--text-min)] text-[var(--text-secondary)] font-medium mt-1">
+          <span className="text-[11px] sm:text-[var(--text-min)] text-[var(--text-secondary)] font-medium mt-0.5 sm:mt-1 truncate">
             {meta}
           </span>
         )}

@@ -15,17 +15,20 @@ import { execSync } from "child_process";
 import dotenv from "dotenv";
 dotenv.config();
 
+import https from "https";
+import { NodeHttpHandler } from "@smithy/node-http-handler";
 import {
   S3Client,
   CreateMultipartUploadCommand,
   UploadPartCommand,
   CompleteMultipartUploadCommand,
+  AbortMultipartUploadCommand,
   PutObjectCommand,
 } from "@aws-sdk/client-s3";
 import { prisma } from "../src/lib/prisma";
 
-const CHUNK_SIZE = 15 * 1024 * 1024; // 15MB chunks
-const CONCURRENCY = 6; // 6 parallel chunk uploads for maximum bandwidth
+const CHUNK_SIZE = 10 * 1024 * 1024; // 10MB chunks
+const CONCURRENCY = 2; // 2 parallel streams for maximum stability on B2 S3 API
 
 interface MovieMetadata {
   titleEn: string;
@@ -70,7 +73,7 @@ async function extractVideoDetails(filePath: string): Promise<{
     const seekSec = durationSeconds > 600 ? Math.floor(durationSeconds * 0.1) : 30;
     const tempPoster = path.join("/tmp", `poster_${Date.now()}.jpg`);
     execSync(
-      `ffmpeg -y -ss ${seekSec} -i "${filePath}" -vframes 1 -q:v 2 -vf "scale=min(1280\\,iw):-2" "${tempPoster}"`,
+      `ffmpeg -y -ss ${seekSec} -i "${filePath}" -frames:v 1 -update 1 -q:v 2 -vf "scale=min(1280\\,iw):-2" "${tempPoster}"`,
       { stdio: "ignore" }
     );
     if (fs.existsSync(tempPoster)) {
@@ -85,7 +88,28 @@ async function extractVideoDetails(filePath: string): Promise<{
 }
 
 async function main() {
-  const targetFileArg = process.argv[2] || "[MM] - Irumudi (2026).mkv";
+  const args = process.argv.slice(2);
+  let targetFileArg = "";
+  let customTitleEn = "";
+  let customTitleTe = "";
+  let customYear = 0;
+
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === "--title-en" && args[i + 1]) {
+      customTitleEn = args[++i];
+    } else if (args[i] === "--title-te" && args[i + 1]) {
+      customTitleTe = args[++i];
+    } else if (args[i] === "--year" && args[i + 1]) {
+      customYear = parseInt(args[++i], 10);
+    } else if (!args[i].startsWith("--") && !targetFileArg) {
+      targetFileArg = args[i];
+    }
+  }
+
+  if (!targetFileArg) {
+    targetFileArg = "[MM] - Peddi (2026) Telugu HQ HDRip - 720p - HEVC - x265 - (.mkv";
+  }
+
   const filePath = path.isAbsolute(targetFileArg)
     ? targetFileArg
     : path.resolve(process.cwd(), targetFileArg);
@@ -139,6 +163,16 @@ async function main() {
     endpoint,
     forcePathStyle: true,
     credentials: { accessKeyId, secretAccessKey },
+    maxAttempts: 5,
+    requestHandler: new NodeHttpHandler({
+      requestTimeout: 35000,
+      connectionTimeout: 10000,
+      httpsAgent: new https.Agent({
+        keepAlive: true,
+        maxSockets: 20,
+        timeout: 35000,
+      }),
+    }),
   });
 
   // Extract metadata
@@ -147,16 +181,43 @@ async function main() {
   console.log(`⏱️ Duration: ${Math.floor(durationSeconds / 60)}m ${Math.floor(durationSeconds % 60)}s`);
   console.log(`📐 Resolution: ${width}x${height}`);
 
+  // Infer title & year
+  let year = customYear;
+  if (!year) {
+    const yearMatch = fileName.match(/\b(19\d\d|20\d\d)\b/);
+    year = yearMatch ? parseInt(yearMatch[1], 10) : new Date().getFullYear();
+  }
+
+  let titleEn = customTitleEn;
+  let titleTe = customTitleTe;
+
+  if (!titleEn) {
+    if (fileName.toLowerCase().includes("peddi")) {
+      titleEn = "Peddi";
+      titleTe = titleTe || "పెద్ది";
+    } else if (fileName.toLowerCase().includes("irumudi")) {
+      titleEn = "Irumudi";
+      titleTe = titleTe || "ఇరుముడి";
+    } else {
+      titleEn = fileName
+        .replace(/^\[.*?\]\s*-?\s*/, "")
+        .replace(/\(.*?\)/g, "")
+        .replace(/Telugu.*$/i, "")
+        .trim();
+      titleTe = titleTe || titleEn;
+    }
+  }
+  if (!titleTe) {
+    titleTe = titleEn;
+  }
+
   // Determine media ID and paths
   const mediaId = `media_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   const cleanName = fileName.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_.-]/g, "");
-  const year = 2026;
   const storageKey = `originals/MOVIE/${year}/${mediaId}/${cleanName}`;
   const posterKey = posterBuffer ? `posters/${mediaId}.jpg` : undefined;
 
-  // Title details
-  const titleEn = "Irumudi";
-  const titleTe = "ఇరుముడి";
+  console.log(`🏷️ Title: ${titleEn} · ${titleTe} (${year})`);
 
   // Upload Poster if extracted
   if (posterBuffer && posterKey) {
@@ -190,13 +251,12 @@ async function main() {
   const totalParts = Math.ceil(fileSize / CHUNK_SIZE);
   console.log(`📊 Split into ${totalParts} chunks of ${(CHUNK_SIZE / (1024 * 1024)).toFixed(0)} MB each (${CONCURRENCY} parallel streams)...\n`);
 
-  const partsToUpload: number[] = [];
+  const pendingParts: number[] = [];
   for (let i = 1; i <= totalParts; i++) {
-    partsToUpload.push(i);
+    pendingParts.push(i);
   }
 
   const completedParts: Array<{ PartNumber: number; ETag: string }> = [];
-  let nextPartIndex = 0;
   let totalUploadedBytes = 0;
   const startTime = Date.now();
   const hash = crypto.createHash("sha256");
@@ -205,8 +265,10 @@ async function main() {
   const fileHandle = fs.openSync(filePath, "r");
 
   const worker = async (workerId: number) => {
-    while (nextPartIndex < partsToUpload.length) {
-      const partNumber = partsToUpload[nextPartIndex++];
+    while (pendingParts.length > 0) {
+      const partNumber = pendingParts.shift();
+      if (!partNumber) break;
+
       const start = (partNumber - 1) * CHUNK_SIZE;
       const length = Math.min(CHUNK_SIZE, fileSize - start);
       const buffer = Buffer.alloc(length);
@@ -216,7 +278,7 @@ async function main() {
       let success = false;
       let lastErr: any = null;
 
-      for (let attempt = 1; attempt <= 3; attempt++) {
+      for (let attempt = 1; attempt <= 6; attempt++) {
         try {
           const uploadPartRes = await s3.send(
             new UploadPartCommand({
@@ -240,20 +302,26 @@ async function main() {
           const remainingBytes = fileSize - totalUploadedBytes;
           const etaSec = speedMBs > 0 ? Math.round(remainingBytes / (speedMBs * 1024 * 1024)) : 0;
 
-          process.stdout.write(
-            `\r⏳ Uploading: ${percent}% | ${(totalUploadedBytes / (1024 * 1024)).toFixed(0)}/${(fileSize / (1024 * 1024)).toFixed(0)} MB | ${speedMBs.toFixed(1)} MB/s | ETA: ${etaSec}s    `
+          console.log(
+            `⏳ [${percent}%] Part ${completedParts.length}/${totalParts} (${(totalUploadedBytes / (1024 * 1024)).toFixed(0)}/${(fileSize / (1024 * 1024)).toFixed(0)} MB) - ${speedMBs.toFixed(1)} MB/s - ETA: ${etaSec}s`
           );
 
           success = true;
           break;
         } catch (err: any) {
           lastErr = err;
-          await new Promise((r) => setTimeout(r, 1000 * attempt));
+          const delayMs = Math.min(1000 * Math.pow(2, attempt) + Math.floor(Math.random() * 800), 20000);
+          console.warn(`\n⚠️ Part ${partNumber} attempt ${attempt}/6 failed (${err.message}). Retrying in ${(delayMs / 1000).toFixed(1)}s...`);
+          await new Promise((r) => setTimeout(r, delayMs));
         }
       }
 
       if (!success) {
-        throw new Error(`Failed to upload part ${partNumber} after 3 attempts: ${lastErr?.message}`);
+        fs.closeSync(fileHandle);
+        try {
+          await s3.send(new AbortMultipartUploadCommand({ Bucket: bucket, Key: storageKey, UploadId: uploadId }));
+        } catch (_) {}
+        throw new Error(`Failed to upload part ${partNumber} after 6 attempts: ${lastErr?.message}`);
       }
     }
   };
@@ -312,7 +380,7 @@ async function main() {
   console.log(`   Year: ${item.year}`);
   console.log(`   Storage Key: ${item.originalKey}`);
   console.log(`   Status: ${item.status}`);
-  console.log("\nAmma can now see and watch 'Irumudi · ఇరుముడి' directly from the Movies page! 🍿\n");
+  console.log(`\nAmma can now see and watch '${item.title_en} · ${item.title_te}' directly from the Movies page! 🍿\n`);
 }
 
 main().catch((err) => {

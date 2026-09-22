@@ -475,7 +475,7 @@ export default function AdminUploadPage() {
               handleFilesAdded(e.dataTransfer.files);
             }
           }}
-          className={`relative border-6 border-dashed rounded-3xl p-10 sm:p-16 text-center transition-all bg-[var(--bg-surface-elevated)] ${
+          className={`relative border-4 sm:border-6 border-dashed rounded-3xl p-6 sm:p-16 text-center transition-all bg-[var(--bg-surface-elevated)] ${
             isDragging
               ? "border-[var(--color-primary-yellow)] bg-slate-900"
               : "border-[var(--border-thick)] hover:border-slate-400"
@@ -499,13 +499,13 @@ export default function AdminUploadPage() {
             onChange={(e) => e.target.files && handleFilesAdded(e.target.files)}
           />
 
-          <UploadCloud className="w-24 h-24 mx-auto mb-6 text-[var(--color-primary-yellow)] animate-pulse" />
+          <UploadCloud className="w-16 h-16 sm:w-24 sm:h-24 mx-auto mb-4 sm:mb-6 text-[var(--color-primary-yellow)] animate-pulse" />
 
           <h2 className="text-[var(--text-heading)] font-bold text-white mb-4">
             <Bi k="dragAndDrop" layout="stacked" />
           </h2>
 
-          <div className="flex flex-wrap gap-6 justify-center mt-8">
+          <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center mt-6 sm:mt-8">
             <BigButton
               k="selectFiles"
               variant="accent"
@@ -541,7 +541,7 @@ export default function AdminUploadPage() {
               {queue.map((item) => (
                 <div
                   key={item.id}
-                  className="bg-[var(--bg-surface-elevated)] border-4 border-[var(--border-thick)] rounded-3xl p-6 sm:p-8 space-y-6 transition-all"
+                  className="bg-[var(--bg-surface-elevated)] border-4 border-[var(--border-thick)] rounded-2xl sm:rounded-3xl p-4 sm:p-8 space-y-4 sm:space-y-6 transition-all"
                 >
 
                   {/* Duplicate Notice */}
@@ -558,7 +558,7 @@ export default function AdminUploadPage() {
                   )}
 
                   {/* Item Metadata Form */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
                     <div className="space-y-2">
                       <label className="text-slate-300 font-semibold text-[var(--text-body)]">
                         <Bi k="titleEnglish" />
@@ -568,7 +568,7 @@ export default function AdminUploadPage() {
                         value={item.titleEn}
                         onChange={(e) => updateQueueItem(item.id, { titleEn: e.target.value })}
                         disabled={item.status === "uploading" || item.status === "completed"}
-                        className="w-full min-h-[64px] px-5 text-[var(--text-body)] bg-slate-900 text-white border-4 border-[var(--border-thick)] rounded-xl"
+                        className="w-full min-h-[56px] sm:min-h-[64px] px-4 sm:px-5 text-[var(--text-body)] bg-slate-900 text-white border-4 border-[var(--border-thick)] rounded-xl"
                       />
                     </div>
 
@@ -581,7 +581,7 @@ export default function AdminUploadPage() {
                         value={item.titleTe}
                         onChange={(e) => updateQueueItem(item.id, { titleTe: e.target.value })}
                         disabled={item.status === "uploading" || item.status === "completed"}
-                        className="w-full min-h-[64px] px-5 text-[var(--text-body)] bg-slate-900 text-white border-4 border-[var(--border-thick)] rounded-xl font-sans"
+                        className="w-full min-h-[56px] sm:min-h-[64px] px-4 sm:px-5 text-[var(--text-body)] bg-slate-900 text-white border-4 border-[var(--border-thick)] rounded-xl font-sans"
                       />
                     </div>
 
@@ -598,7 +598,7 @@ export default function AdminUploadPage() {
                           })
                         }
                         disabled={item.status === "uploading" || item.status === "completed"}
-                        className="w-full min-h-[64px] px-5 text-[var(--text-body)] bg-slate-900 text-white border-4 border-[var(--border-thick)] rounded-xl"
+                        className="w-full min-h-[56px] sm:min-h-[64px] px-4 sm:px-5 text-[var(--text-body)] bg-slate-900 text-white border-4 border-[var(--border-thick)] rounded-xl"
                       />
                     </div>
                   </div>
@@ -620,7 +620,7 @@ export default function AdminUploadPage() {
                   )}
 
                   {/* Status Badges & Controls */}
-                  <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t-2 border-[var(--border-subtle)]">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-4 border-t-2 border-[var(--border-subtle)]">
                     <div className="flex items-center gap-3">
                       {item.status === "completed" && (
                         <div className="flex items-center gap-2 text-emerald-400 font-bold text-[var(--text-body)]">
@@ -640,7 +640,7 @@ export default function AdminUploadPage() {
                       )}
                     </div>
 
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-wrap items-center gap-3 sm:gap-4">
                       {item.status === "ready" && (
                         <BigButton
                           k="uploadMedia"
@@ -677,10 +677,10 @@ export default function AdminUploadPage() {
                       <button
                         type="button"
                         onClick={() => removeItem(item.id)}
-                        className="p-4 text-slate-400 hover:text-red-400 transition-colors"
+                        className="p-3 sm:p-4 text-slate-400 hover:text-red-400 transition-colors"
                         aria-label="Remove item"
                       >
-                        <Trash2 className="w-8 h-8" />
+                        <Trash2 className="w-7 h-7 sm:w-8 sm:h-8" />
                       </button>
                     </div>
                   </div>

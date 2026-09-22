@@ -94,7 +94,7 @@ export default function FamilyVideosPage() {
   return (
     <PageShell titleStringKey="familyVideos">
       {/* Search & Filter Header Bar */}
-      <div className="flex flex-col md:flex-row gap-4 mb-8">
+      <div className="flex flex-col md:flex-row gap-3 sm:gap-4 mb-6 sm:mb-8">
         {/* Live Search Input */}
         <div className="relative flex-1">
           <input
@@ -102,14 +102,14 @@ export default function FamilyVideosPage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search family videos... / వీడియోలను వెతకండి..."
-            className="w-full min-h-[64px] sm:min-h-[72px] px-6 py-4 bg-slate-900 border-4 border-slate-700 rounded-3xl text-2xl font-bold text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 focus:ring-4 focus:ring-amber-400"
+            className="w-full min-h-[56px] sm:min-h-[72px] px-4 sm:px-6 py-3 sm:py-4 bg-slate-900 border-3 sm:border-4 border-slate-700 rounded-2xl sm:rounded-3xl text-lg sm:text-2xl font-bold text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 focus:ring-4 focus:ring-amber-400"
             aria-label="Search family videos"
           />
           {searchQuery && (
             <button
               type="button"
               onClick={() => setSearchQuery("")}
-              className="absolute right-4 top-1/2 -translate-y-1/2 min-h-[48px] px-4 bg-slate-800 text-slate-300 font-bold rounded-xl"
+              className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 min-h-[40px] sm:min-h-[48px] px-3 sm:px-4 bg-slate-800 text-slate-300 font-bold rounded-xl"
               aria-label="Clear search"
             >
               ✕
@@ -118,11 +118,11 @@ export default function FamilyVideosPage() {
         </div>
 
         {/* Filter Chips */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <button
             type="button"
             onClick={() => startTransition(() => setActiveFilter("all"))}
-            className={`min-h-[64px] sm:min-h-[72px] px-8 py-3 rounded-2xl font-extrabold text-2xl border-4 transition-all shadow-md focus:ring-4 focus:ring-amber-400 ${
+            className={`flex-1 sm:flex-initial min-h-[56px] sm:min-h-[72px] px-5 sm:px-8 py-2.5 sm:py-3 rounded-2xl font-extrabold text-base sm:text-2xl border-3 sm:border-4 transition-all shadow-md focus:ring-4 focus:ring-amber-400 ${
               activeFilter === "all"
                 ? "bg-amber-400 text-black border-amber-300 shadow-amber-400/20"
                 : "bg-slate-900 text-white border-slate-700 hover:border-amber-400"
@@ -134,7 +134,7 @@ export default function FamilyVideosPage() {
           <button
             type="button"
             onClick={() => startTransition(() => setActiveFilter("favorites"))}
-            className={`min-h-[64px] sm:min-h-[72px] px-8 py-3 rounded-2xl font-extrabold text-2xl border-4 transition-all shadow-md flex items-center gap-2 focus:ring-4 focus:ring-amber-400 ${
+            className={`flex-1 sm:flex-initial min-h-[56px] sm:min-h-[72px] px-5 sm:px-8 py-2.5 sm:py-3 rounded-2xl font-extrabold text-base sm:text-2xl border-3 sm:border-4 transition-all shadow-md flex items-center justify-center gap-2 focus:ring-4 focus:ring-amber-400 ${
               activeFilter === "favorites"
                 ? "bg-rose-600 text-white border-rose-400 shadow-rose-600/30"
                 : "bg-slate-900 text-white border-slate-700 hover:border-rose-400"
@@ -155,37 +155,37 @@ export default function FamilyVideosPage() {
           </div>
         </div>
       ) : groups.length === 0 ? (
-        <div className="text-center py-20 bg-slate-900/60 rounded-3xl border-2 border-slate-800">
-          <p className="text-3xl text-slate-400 font-bold mb-4">
+        <div className="text-center py-16 sm:py-20 bg-slate-900/60 rounded-3xl border-2 border-slate-800">
+          <p className="text-2xl sm:text-3xl text-slate-400 font-bold mb-4">
             <Bi stringKey="noVideosEmpty" />
           </p>
         </div>
       ) : (
         /* Video Groups by Year */
-        <div className="space-y-12">
+        <div className="space-y-8 sm:space-y-12">
           {groups.map((group) => (
             <section key={group.year}>
               {/* Year Header */}
-              <div className="py-3 mb-6 border-b-4 border-amber-400/40 flex items-center justify-between">
-                <h2 className="text-3xl sm:text-4xl font-extrabold text-amber-400 flex items-center gap-3">
+              <div className="py-2.5 sm:py-3 mb-4 sm:mb-6 border-b-4 border-amber-400/40 flex items-center justify-between">
+                <h2 className="text-2xl sm:text-4xl font-extrabold text-amber-400 flex items-center gap-2 sm:gap-3">
                   <span>📹</span>
                   <span>{group.title.te}</span>
                   <span className="text-slate-500">·</span>
                   <span className="text-white">{group.title.en}</span>
                 </h2>
-                <span className="text-slate-400 font-mono font-bold text-xl">
+                <span className="text-slate-400 font-mono font-bold text-sm sm:text-xl">
                   {group.items.length} <Bi stringKey="videoCount" />
                 </span>
               </div>
 
               {/* 16:9 Landscape Video Cards Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {group.items.map((video) => (
                   <button
                     key={video.id}
                     type="button"
                     onClick={() => handleVideoClick(video)}
-                    className="group bg-slate-900 rounded-3xl overflow-hidden border-4 border-slate-800 hover:border-amber-400 focus:ring-4 focus:ring-amber-400 text-left transition-all shadow-xl active:scale-95 flex flex-col"
+                    className="group bg-slate-900 rounded-2xl sm:rounded-3xl overflow-hidden border-3 sm:border-4 border-slate-800 hover:border-amber-400 focus:ring-4 focus:ring-amber-400 text-left transition-all shadow-xl active:scale-95 flex flex-col"
                     aria-label={`${video.title_en} · ${video.title_te}`}
                   >
                     {/* 16:9 Thumbnail Box */}
@@ -199,43 +199,43 @@ export default function FamilyVideosPage() {
                           className="object-cover group-hover:scale-105 transition-transform"
                         />
                       ) : (
-                        <span className="text-6xl">📹</span>
+                        <span className="text-5xl sm:text-6xl">📹</span>
                       )}
 
                       {/* Giant Play Icon Overlay */}
                       <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition-colors flex items-center justify-center">
-                        <div className="w-20 h-20 bg-amber-400 text-black rounded-full flex items-center justify-center text-4xl font-bold shadow-2xl group-hover:scale-110 transition-transform">
+                        <div className="w-14 h-14 sm:w-20 sm:h-20 bg-amber-400 text-black rounded-full flex items-center justify-center text-2xl sm:text-4xl font-bold shadow-2xl group-hover:scale-110 transition-transform">
                           ▶
                         </div>
                       </div>
 
                       {/* Duration on Solid Bar */}
-                      <div className="absolute bottom-3 right-3 bg-black/90 px-3.5 py-1.5 rounded-xl text-amber-400 font-mono font-extrabold text-xl border border-slate-700">
+                      <div className="absolute bottom-2 sm:bottom-3 right-2 sm:right-3 bg-black/90 px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-lg sm:rounded-xl text-amber-400 font-mono font-extrabold text-sm sm:text-xl border border-slate-700">
                         {formatDuration(video.durationSeconds)}
                       </div>
 
                       {video.isFavorite && (
-                        <div className="absolute top-3 right-3 text-2xl drop-shadow">
+                        <div className="absolute top-2 sm:top-3 right-2 sm:right-3 text-xl sm:text-2xl drop-shadow">
                           ❤️
                         </div>
                       )}
                     </div>
 
                     {/* Titles on Solid Bar Underneath */}
-                    <div className="p-5 bg-slate-900 border-t-2 border-slate-800 flex-1 flex flex-col justify-between">
+                    <div className="p-4 sm:p-5 bg-slate-900 border-t-2 border-slate-800 flex-1 flex flex-col justify-between">
                       <div>
-                        <h3 className="text-2xl sm:text-3xl font-extrabold text-white mb-1 group-hover:text-amber-400 transition-colors">
+                        <h3 className="text-xl sm:text-3xl font-extrabold text-white mb-1 group-hover:text-amber-400 transition-colors">
                           {video.title_te}
                         </h3>
-                        <h4 className="text-xl sm:text-2xl font-bold text-slate-300">
+                        <h4 className="text-lg sm:text-2xl font-bold text-slate-300">
                           {video.title_en}
                         </h4>
                       </div>
 
                       {/* Watch Progress Bar if started */}
                       {video.progress && video.progress.positionSeconds > 10 && !video.progress.isCompleted && (
-                        <div className="mt-4 pt-3 border-t border-slate-800">
-                          <div className="w-full bg-slate-800 h-3 rounded-full overflow-hidden mb-1">
+                        <div className="mt-3 sm:mt-4 pt-2.5 sm:pt-3 border-t border-slate-800">
+                          <div className="w-full bg-slate-800 h-2.5 sm:h-3 rounded-full overflow-hidden mb-1">
                             <div
                               className="bg-amber-400 h-full rounded-full"
                               style={{
@@ -248,7 +248,7 @@ export default function FamilyVideosPage() {
                               }}
                             />
                           </div>
-                          <div className="text-sm font-mono text-amber-400 font-bold">
+                          <div className="text-xs sm:text-sm font-mono text-amber-400 font-bold">
                             <Bi stringKey="resumeFrom" /> {formatTimeMinutes(video.progress.positionSeconds)}
                           </div>
                         </div>
@@ -268,25 +268,25 @@ export default function FamilyVideosPage() {
           role="dialog"
           aria-modal="true"
           aria-label="Resume Video Confirmation"
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6"
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3.5 sm:p-6 overflow-y-auto"
         >
-          <div className="w-full max-w-xl bg-slate-900 border-4 border-amber-400 rounded-3xl p-6 sm:p-8 shadow-2xl text-center">
-            <h3 className="text-3xl sm:text-4xl font-extrabold text-white mb-2">
+          <div className="w-full max-w-xl bg-slate-900 border-4 border-amber-400 rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-2xl text-center">
+            <h3 className="text-2xl sm:text-4xl font-extrabold text-white mb-1 sm:mb-2">
               {selectedVideo.title_te}
             </h3>
-            <h4 className="text-2xl font-bold text-slate-400 mb-6">
+            <h4 className="text-xl sm:text-2xl font-bold text-slate-400 mb-4 sm:mb-6">
               {selectedVideo.title_en}
             </h4>
 
-            <p className="text-2xl text-amber-300 font-bold mb-8">
+            <p className="text-xl sm:text-2xl text-amber-300 font-bold mb-6 sm:mb-8">
               <Bi stringKey="resumeFrom" /> {formatTimeMinutes(selectedVideo.progress?.positionSeconds || 0)}?
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
               <button
                 type="button"
                 onClick={() => handleResume(false)}
-                className="flex-1 min-h-[80px] px-6 py-4 bg-amber-400 hover:bg-amber-300 text-black font-extrabold text-2xl rounded-2xl border-4 border-amber-200 shadow-lg active:scale-95 focus:ring-4 focus:ring-amber-300"
+                className="flex-1 min-h-[64px] sm:min-h-[80px] px-4 sm:px-6 py-3 sm:py-4 bg-amber-400 hover:bg-amber-300 text-black font-extrabold text-lg sm:text-2xl rounded-2xl border-3 sm:border-4 border-amber-200 shadow-lg active:scale-95 focus:ring-4 focus:ring-amber-300"
               >
                 <Bi stringKey="resume" />
               </button>
@@ -294,7 +294,7 @@ export default function FamilyVideosPage() {
               <button
                 type="button"
                 onClick={() => handleResume(true)}
-                className="flex-1 min-h-[80px] px-6 py-4 bg-slate-800 hover:bg-slate-700 text-white font-extrabold text-2xl rounded-2xl border-4 border-slate-600 active:scale-95 focus:ring-4 focus:ring-amber-400"
+                className="flex-1 min-h-[64px] sm:min-h-[80px] px-4 sm:px-6 py-3 sm:py-4 bg-slate-800 hover:bg-slate-700 text-white font-extrabold text-lg sm:text-2xl rounded-2xl border-3 sm:border-4 border-slate-600 active:scale-95 focus:ring-4 focus:ring-amber-400"
               >
                 <Bi stringKey="startOver" />
               </button>
@@ -303,7 +303,7 @@ export default function FamilyVideosPage() {
             <button
               type="button"
               onClick={() => setSelectedVideo(null)}
-              className="mt-6 text-slate-400 font-bold text-xl hover:text-white underline"
+              className="mt-4 sm:mt-6 text-slate-400 font-bold text-base sm:text-xl hover:text-white underline"
             >
               <Bi stringKey="cancel" />
             </button>

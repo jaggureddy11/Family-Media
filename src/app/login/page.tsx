@@ -58,10 +58,10 @@ export default function LoginPage() {
       showBack={false}
       showHome={true}
     >
-      <div className="max-w-xl mx-auto my-8 sm:my-16 p-6 sm:p-12 bg-[var(--bg-surface)] border-4 border-[var(--border-subtle)] rounded-3xl shadow-2xl flex flex-col gap-8">
-        <div className="flex flex-col items-center text-center gap-4">
-          <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-[var(--bg-surface-elevated)] border-4 border-yellow-400 flex items-center justify-center text-yellow-300">
-            <Lock className="w-10 h-10 sm:w-12 sm:h-12" />
+      <div className="max-w-xl mx-auto my-4 sm:my-16 p-4 sm:p-12 bg-[var(--bg-surface)] border-4 border-[var(--border-subtle)] rounded-2xl sm:rounded-3xl shadow-2xl flex flex-col gap-6 sm:gap-8">
+        <div className="flex flex-col items-center text-center gap-3 sm:gap-4">
+          <div className="w-16 h-16 sm:w-24 sm:h-24 rounded-full bg-[var(--bg-surface-elevated)] border-4 border-yellow-400 flex items-center justify-center text-yellow-300">
+            <Lock className="w-8 h-8 sm:w-12 sm:h-12" />
           </div>
           <h1 className="text-[var(--text-heading)] font-bold">
             <Bi k="adminLogin" layout="stacked" />
@@ -71,7 +71,7 @@ export default function LoginPage() {
         {errorKey && (
           <div
             role="alert"
-            className="p-5 bg-red-950/80 border-4 border-red-500 rounded-2xl flex items-center gap-4 text-white"
+            className="p-4 sm:p-5 bg-red-950/80 border-4 border-red-500 rounded-2xl flex items-center gap-4 text-white"
           >
             <AlertCircle className="w-8 h-8 text-red-400 shrink-0" />
             <div className="text-[var(--text-body)] font-medium">
@@ -96,7 +96,7 @@ export default function LoginPage() {
               placeholder="••••••••••••"
               disabled={isLoading}
               required
-              className="kutumbam-focus w-full min-h-[64px] sm:min-h-[72px] px-6 text-[var(--text-body)] bg-[var(--bg-surface-elevated)] text-white border-4 border-[var(--border-thick)] rounded-2xl placeholder:text-slate-500 font-sans"
+              className="kutumbam-focus w-full min-h-[56px] sm:min-h-[72px] px-4 sm:px-6 text-[var(--text-body)] bg-[var(--bg-surface-elevated)] text-white border-4 border-[var(--border-thick)] rounded-2xl placeholder:text-slate-500 font-sans"
               data-nav-item="true"
             />
           </div>

@@ -78,15 +78,15 @@ export const BigButton: React.FC<BigButtonProps> = ({
 
   const sizeStyles =
     size === "small"
-      ? "min-h-[38px] sm:min-h-[44px] px-2.5 sm:px-4 py-1 text-xs sm:text-sm"
+      ? "min-h-[42px] sm:min-h-[44px] px-2.5 sm:px-4 py-1 text-xs sm:text-sm"
       : size === "large"
-      ? "min-h-[88px] px-8 py-5 text-3xl"
-      : "min-h-[72px] sm:min-h-[88px] px-3 sm:px-6 py-2.5 sm:py-4 text-[var(--text-btn)]";
+      ? "min-h-[76px] sm:min-h-[88px] px-5 sm:px-8 py-4 sm:py-5 text-xl sm:text-3xl"
+      : "min-h-[64px] sm:min-h-[88px] px-3 sm:px-6 py-2.5 sm:py-4 text-lg sm:text-[var(--text-btn)]";
 
   const baseStyles = `
     kutumbam-focus
     ${sizeStyles}
-    ${size === "small" ? "border-2 sm:border-3 rounded-xl" : "border-4 rounded-3xl"}
+    ${size === "small" ? "border-2 sm:border-3 rounded-xl" : "border-4 rounded-2xl sm:rounded-3xl"}
     flex items-center justify-center ${size === "small" ? "gap-1.5 sm:gap-2" : "gap-2 sm:gap-4"}
     cursor-pointer
     transition-all duration-150
@@ -104,7 +104,7 @@ export const BigButton: React.FC<BigButtonProps> = ({
       {icon && (
         <span
           className={`flex-shrink-0 flex items-center justify-center ${
-            size === "small" ? "w-4 h-4 sm:w-5 sm:h-5" : "w-8 h-8 sm:w-12 sm:h-12"
+            size === "small" ? "w-4 h-4 sm:w-5 sm:h-5" : "w-6 h-6 sm:w-8 sm:h-8 md:w-12 md:h-12"
           } ${
             variant === "accent" ? "!text-black" : "text-[var(--accent)]"
           }`}
@@ -122,8 +122,8 @@ export const BigButton: React.FC<BigButtonProps> = ({
           te={te}
           layout="auto"
           className={`font-bold tracking-tight text-center ${variant === "accent" ? "!text-black" : ""}`}
-          enClassName={`${size === "small" ? "text-xs sm:text-sm font-medium" : "text-[0.9em] sm:text-[1.1em]"} ${variant === "accent" ? "!text-black" : ""}`}
-          teClassName={`${size === "small" ? "text-xs sm:text-sm font-bold" : "text-[1.05em] sm:text-[1.25em]"} ${variant === "accent" ? "!text-black" : ""}`}
+          enClassName={`${size === "small" ? "text-xs sm:text-sm font-medium" : "text-sm sm:text-[0.9em] md:text-[1.1em]"} ${variant === "accent" ? "!text-black" : ""}`}
+          teClassName={`${size === "small" ? "text-xs sm:text-sm font-bold" : "text-base sm:text-[1.05em] md:text-[1.25em]"} ${variant === "accent" ? "!text-black" : ""}`}
         />
       )}
     </>

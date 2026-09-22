@@ -68,11 +68,12 @@ export default function AdminDevicesPage() {
       headerAction={
         <Link
           href="/admin/family"
-          className="kutumbam-focus min-h-[56px] sm:min-h-[80px] px-3 sm:px-6 py-1 bg-[var(--bg-surface-elevated)] border-4 border-[var(--border-subtle)] hover:border-white rounded-3xl flex items-center gap-2 text-[var(--text-min)] font-bold"
+          className="kutumbam-focus min-h-[42px] sm:min-h-[80px] px-2.5 sm:px-6 py-1 bg-[var(--bg-surface-elevated)] border-2 sm:border-4 border-[var(--border-subtle)] hover:border-white rounded-xl sm:rounded-3xl flex items-center gap-1.5 sm:gap-2 text-xs sm:text-[var(--text-min)] font-bold shrink-0"
           data-nav-item="true"
+          aria-label="Family Members · కుటుంబ సభ్యులు"
         >
-          <Users className="w-6 h-6 text-yellow-300" />
-          <Bi k="familyMembers" />
+          <Users className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-300" />
+          <span className="hidden sm:inline"><Bi k="familyMembers" /></span>
         </Link>
       }
       navItems={[
@@ -82,7 +83,7 @@ export default function AdminDevicesPage() {
         { key: "installGuide", href: "/admin/install" },
       ]}
     >
-      <div className="flex flex-col gap-8 pb-16">
+      <div className="flex flex-col gap-6 sm:gap-8 pb-16">
         <h2 className="text-[var(--text-heading)] font-bold text-white border-b-4 border-[var(--border-subtle)] pb-3">
           <Bi k="activeDevices" />
         </h2>
@@ -92,17 +93,17 @@ export default function AdminDevicesPage() {
             <Bi k="gettingReady" />
           </div>
         ) : devices.length === 0 ? (
-          <div className="p-12 text-center bg-[var(--bg-surface)] rounded-3xl border-4 border-[var(--border-subtle)]">
+          <div className="p-8 sm:p-12 text-center bg-[var(--bg-surface)] rounded-2xl sm:rounded-3xl border-4 border-[var(--border-subtle)]">
             <p className="text-[var(--text-body)] text-slate-300 font-semibold">
               No registered devices yet. Create a device link to add one.
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             {devices.map((device) => (
               <div
                 key={device.id}
-                className={`p-6 sm:p-8 rounded-3xl border-4 flex flex-col justify-between gap-6 ${
+                className={`p-4 sm:p-8 rounded-2xl sm:rounded-3xl border-4 flex flex-col justify-between gap-6 ${
                   device.isRevoked
                     ? "bg-black/60 border-slate-800 opacity-60"
                     : "bg-[var(--bg-surface)] border-[var(--border-thick)]"
@@ -110,20 +111,20 @@ export default function AdminDevicesPage() {
               >
                 <div className="flex flex-col gap-3">
                   <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3 text-yellow-300">
-                      <Laptop className="w-8 h-8" />
-                      <h3 className="text-[var(--text-heading)] font-bold text-white">
+                    <div className="flex items-center gap-2.5 sm:gap-3 text-yellow-300 min-w-0">
+                      <Laptop className="w-6 h-6 sm:w-8 sm:h-8 shrink-0" />
+                      <h3 className="text-xl sm:text-[var(--text-heading)] font-bold text-white truncate">
                         {device.deviceName}
                       </h3>
                     </div>
 
                     {device.isRevoked ? (
-                      <span className="flex items-center gap-1.5 text-red-400 font-bold text-base px-3 py-1 bg-red-950/80 border border-red-800 rounded-full">
-                        <XCircle className="w-5 h-5" /> Revoked
+                      <span className="flex items-center gap-1.5 text-red-400 font-bold text-xs sm:text-base px-2.5 sm:px-3 py-1 bg-red-950/80 border border-red-800 rounded-full shrink-0">
+                        <XCircle className="w-4 h-4 sm:w-5 sm:h-5" /> Revoked
                       </span>
                     ) : (
-                      <span className="flex items-center gap-1.5 text-green-400 font-bold text-base px-3 py-1 bg-green-950/80 border border-green-800 rounded-full">
-                        <CheckCircle2 className="w-5 h-5" /> Active
+                      <span className="flex items-center gap-1.5 text-green-400 font-bold text-xs sm:text-base px-2.5 sm:px-3 py-1 bg-green-950/80 border border-green-800 rounded-full shrink-0">
+                        <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" /> Active
                       </span>
                     )}
                   </div>

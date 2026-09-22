@@ -143,15 +143,15 @@ export default function AdminLibraryPage() {
       <div className="max-w-6xl mx-auto space-y-8 pb-16">
         {/* Top Controls Bar */}
         <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
-          <form onSubmit={handleSearchSubmit} className="flex-1 flex gap-3">
+          <form onSubmit={handleSearchSubmit} className="flex-1 flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
-              <Search className="w-8 h-8 absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Search className="w-6 h-6 sm:w-8 sm:h-8 absolute left-4 sm:left-5 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="search"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search media / శోధించండి..."
-                className="w-full min-h-[64px] pl-16 pr-6 text-[var(--text-body)] bg-[var(--bg-surface-elevated)] text-white border-4 border-[var(--border-thick)] rounded-2xl"
+                className="w-full min-h-[56px] sm:min-h-[64px] pl-12 sm:pl-16 pr-4 sm:pr-6 text-base sm:text-[var(--text-body)] bg-[var(--bg-surface-elevated)] text-white border-4 border-[var(--border-thick)] rounded-2xl"
               />
             </div>
             <BigButton
@@ -160,6 +160,7 @@ export default function AdminLibraryPage() {
               variant="accent"
               type="submit"
               icon={<Search className="w-6 h-6" />}
+              className="w-full sm:w-auto"
             />
           </form>
 
@@ -168,11 +169,12 @@ export default function AdminLibraryPage() {
             href="/admin/upload"
             variant="primary"
             icon={<Plus className="w-7 h-7" />}
+            className="w-full sm:w-auto"
           />
         </div>
 
         {/* Filter Pills */}
-        <div className="flex flex-wrap gap-3 items-center">
+        <div className="flex flex-wrap gap-2.5 sm:gap-3 items-center">
           {[
             { id: "ALL", en: "All Media", te: "అన్నీ" },
             { id: "MOVIE", en: "Movies", te: "సినిమాలు" },
@@ -184,7 +186,7 @@ export default function AdminLibraryPage() {
               key={f.id}
               type="button"
               onClick={() => setTypeFilter(f.id)}
-              className={`min-h-[56px] px-6 rounded-2xl font-bold text-[var(--text-body)] border-4 transition-all ${
+              className={`min-h-[46px] sm:min-h-[56px] px-3.5 sm:px-6 rounded-xl sm:rounded-2xl font-bold text-xs sm:text-[var(--text-body)] border-3 sm:border-4 transition-all ${
                 typeFilter === f.id
                   ? "bg-[var(--color-primary-yellow)] text-black border-white"
                   : "bg-[var(--bg-surface-elevated)] text-white border-[var(--border-subtle)] hover:border-slate-400"
@@ -197,19 +199,19 @@ export default function AdminLibraryPage() {
 
         {/* Feedback Message */}
         {actionMessage && (
-          <div className="p-5 bg-emerald-950/80 border-4 border-emerald-500 rounded-2xl text-emerald-200 font-bold text-[var(--text-body)]">
+          <div className="p-4 sm:p-5 bg-emerald-950/80 border-4 border-emerald-500 rounded-2xl text-emerald-200 font-bold text-base sm:text-[var(--text-body)]">
             {actionMessage}
           </div>
         )}
 
         {/* Media Items List / Table */}
         {loading ? (
-          <div className="p-16 text-center text-white text-[var(--text-body)] font-medium">
+          <div className="p-12 sm:p-16 text-center text-white text-[var(--text-body)] font-medium">
             Loading media library...
           </div>
         ) : items.length === 0 ? (
-          <div className="p-16 text-center bg-[var(--bg-surface-elevated)] border-4 border-[var(--border-subtle)] rounded-3xl space-y-6">
-            <Film className="w-20 h-20 text-slate-500 mx-auto" />
+          <div className="p-10 sm:p-16 text-center bg-[var(--bg-surface-elevated)] border-4 border-[var(--border-subtle)] rounded-3xl space-y-6">
+            <Film className="w-16 h-16 sm:w-20 sm:h-20 text-slate-500 mx-auto" />
             <h3 className="text-[var(--text-heading)] font-bold text-white">
               No media items found
             </h3>
@@ -222,21 +224,21 @@ export default function AdminLibraryPage() {
           </div>
         ) : (
           <div className="space-y-6">
-            <div className="text-slate-300 font-bold text-[var(--text-body)]">
+            <div className="text-slate-300 font-bold text-base sm:text-[var(--text-body)]">
               Showing {items.length} items
             </div>
 
-            <div className="grid grid-cols-1 gap-6">
+            <div className="grid grid-cols-1 gap-4 sm:gap-6">
               {items.map((item) => {
                 const isEditing = editingId === item.id;
 
                 return (
                   <div
                     key={item.id}
-                    className="bg-[var(--bg-surface-elevated)] border-4 border-[var(--border-thick)] rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row gap-6 items-start md:items-center justify-between"
+                    className="bg-[var(--bg-surface-elevated)] border-4 border-[var(--border-thick)] rounded-2xl sm:rounded-3xl p-4 sm:p-8 flex flex-col md:flex-row gap-4 sm:gap-6 items-start md:items-center justify-between"
                   >
                     {/* Media Thumbnail / Poster Preview */}
-                    <div className="w-28 h-36 bg-slate-900 rounded-2xl overflow-hidden shrink-0 border-2 border-slate-600 flex items-center justify-center">
+                    <div className="w-20 h-28 sm:w-28 sm:h-36 bg-slate-900 rounded-xl sm:rounded-2xl overflow-hidden shrink-0 border-2 border-slate-600 flex items-center justify-center">
                       {item.posterUrl || item.thumbUrl ? (
                         <img
                           src={item.posterUrl || item.thumbUrl}
@@ -244,20 +246,20 @@ export default function AdminLibraryPage() {
                           className="w-full h-full object-cover"
                         />
                       ) : item.type === "MOVIE" ? (
-                        <Film className="w-12 h-12 text-slate-500" />
+                        <Film className="w-10 h-10 sm:w-12 sm:h-12 text-slate-500" />
                       ) : item.type === "PHOTO" ? (
-                        <ImageIcon className="w-12 h-12 text-slate-500" />
+                        <ImageIcon className="w-10 h-10 sm:w-12 sm:h-12 text-slate-500" />
                       ) : item.type === "FAMILY_VIDEO" ? (
-                        <Video className="w-12 h-12 text-slate-500" />
+                        <Video className="w-10 h-10 sm:w-12 sm:h-12 text-slate-500" />
                       ) : (
-                        <FileText className="w-12 h-12 text-slate-500" />
+                        <FileText className="w-10 h-10 sm:w-12 sm:h-12 text-slate-500" />
                       )}
                     </div>
 
                     {/* Metadata & Inline Edit */}
-                    <div className="flex-1 space-y-3 w-full">
+                    <div className="flex-1 space-y-2 sm:space-y-3 w-full min-w-0">
                       {isEditing ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                           <input
                             type="text"
                             value={editForm.titleEn}
@@ -265,7 +267,7 @@ export default function AdminLibraryPage() {
                               setEditForm({ ...editForm, titleEn: e.target.value })
                             }
                             placeholder="English title"
-                            className="min-h-[56px] px-4 bg-slate-900 text-white border-2 border-slate-500 rounded-xl text-[var(--text-body)]"
+                            className="min-h-[48px] sm:min-h-[56px] px-3 sm:px-4 bg-slate-900 text-white border-2 border-slate-500 rounded-xl text-base sm:text-[var(--text-body)]"
                           />
                           <input
                             type="text"
@@ -274,7 +276,7 @@ export default function AdminLibraryPage() {
                               setEditForm({ ...editForm, titleTe: e.target.value })
                             }
                             placeholder="తెలుగు శీర్షిక"
-                            className="min-h-[56px] px-4 bg-slate-900 text-white border-2 border-slate-500 rounded-xl text-[var(--text-body)] font-sans"
+                            className="min-h-[48px] sm:min-h-[56px] px-3 sm:px-4 bg-slate-900 text-white border-2 border-slate-500 rounded-xl text-base sm:text-[var(--text-body)] font-sans"
                           />
                           <input
                             type="number"
@@ -286,42 +288,42 @@ export default function AdminLibraryPage() {
                               })
                             }
                             placeholder="Year"
-                            className="min-h-[56px] px-4 bg-slate-900 text-white border-2 border-slate-500 rounded-xl text-[var(--text-body)]"
+                            className="min-h-[48px] sm:min-h-[56px] px-3 sm:px-4 bg-slate-900 text-white border-2 border-slate-500 rounded-xl text-base sm:text-[var(--text-body)]"
                           />
                         </div>
                       ) : (
                         <div>
-                          <h3 className="text-[var(--text-heading)] font-bold text-white">
+                          <h3 className="text-xl sm:text-[var(--text-heading)] font-bold text-white break-words">
                             {item.titleEn}
                             {item.year && (
-                              <span className="text-slate-400 ml-3 text-[0.8em]">
+                              <span className="text-slate-400 ml-2 sm:ml-3 text-[0.8em]">
                                 ({item.year})
                               </span>
                             )}
                           </h3>
-                          <div className="text-[var(--text-body)] font-bold text-[var(--color-primary-yellow)] font-sans mt-1">
+                          <div className="text-base sm:text-[var(--text-body)] font-bold text-[var(--color-primary-yellow)] font-sans mt-0.5 sm:mt-1 break-words">
                             {item.titleTe}
                           </div>
                         </div>
                       )}
 
-                      <div className="flex flex-wrap items-center gap-4 text-slate-400 text-[var(--text-caption)] font-medium">
-                        <span className="px-3 py-1 bg-slate-800 rounded-lg text-white font-bold border border-slate-600">
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-slate-400 text-xs sm:text-[var(--text-caption)] font-medium">
+                        <span className="px-2 sm:px-3 py-0.5 sm:py-1 bg-slate-800 rounded-lg text-white font-bold border border-slate-600">
                           {item.type}
                         </span>
-                        <span>{item.originalName}</span>
+                        <span className="truncate max-w-[200px] sm:max-w-none">{item.originalName}</span>
                         {item.durationSec && (
                           <span>
                             {Math.floor(item.durationSec / 60)}m {item.durationSec % 60}s
                           </span>
                         )}
                         <span className="text-emerald-400 font-bold flex items-center gap-1">
-                          <CheckCircle2 className="w-5 h-5" />
+                          <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" />
                           Ready
                         </span>
                         {item.failureReason && (
-                          <span className="px-3 py-1 bg-red-950/90 border-2 border-red-500 rounded-lg text-red-200 font-bold flex items-center gap-2">
-                            <AlertCircle className="w-5 h-5 text-red-400 shrink-0" />
+                          <span className="px-2.5 sm:px-3 py-0.5 sm:py-1 bg-red-950/90 border-2 border-red-500 rounded-lg text-red-200 font-bold flex items-center gap-1.5 sm:gap-2">
+                            <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-400 shrink-0" />
                             <span>
                               <Bi k="playbackError" />: {item.failureReason}
                             </span>
@@ -331,21 +333,21 @@ export default function AdminLibraryPage() {
                     </div>
 
                     {/* Actions */}
-                    <div className="flex items-center gap-3 shrink-0 self-end md:self-center">
+                    <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 shrink-0 self-stretch md:self-center justify-end">
                       {isEditing ? (
                         <>
                           <button
                             type="button"
                             onClick={() => saveEdit(item.id)}
-                            className="min-h-[56px] px-5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl flex items-center gap-2 border-2 border-emerald-400"
+                            className="min-h-[48px] sm:min-h-[56px] px-4 sm:px-5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl flex items-center gap-2 border-2 border-emerald-400 text-sm sm:text-base"
                           >
-                            <Save className="w-6 h-6" />
+                            <Save className="w-5 h-5 sm:w-6 sm:h-6" />
                             <Bi k="save" />
                           </button>
                           <button
                             type="button"
                             onClick={() => setEditingId(null)}
-                            className="min-h-[56px] px-5 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl border border-slate-600"
+                            className="min-h-[48px] sm:min-h-[56px] px-4 sm:px-5 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl border border-slate-600 text-sm sm:text-base"
                           >
                             <Bi k="cancel" />
                           </button>
@@ -355,26 +357,26 @@ export default function AdminLibraryPage() {
                           {(item.type === "MOVIE" || item.type === "FAMILY_VIDEO") && (
                             <Link
                               href={`/watch/${item.id}`}
-                              className="min-h-[56px] px-5 bg-[var(--color-primary-yellow)] hover:bg-yellow-400 text-black font-bold rounded-xl flex items-center gap-2 border-2 border-yellow-300"
+                              className="min-h-[48px] sm:min-h-[56px] px-4 sm:px-5 bg-[var(--color-primary-yellow)] hover:bg-yellow-400 text-black font-bold rounded-xl flex items-center gap-2 border-2 border-yellow-300 text-sm sm:text-base"
                             >
-                              <Play className="w-6 h-6 fill-current" />
+                              <Play className="w-5 h-5 sm:w-6 sm:h-6 fill-current" />
                               <Bi k="play" />
                             </Link>
                           )}
                           <button
                             type="button"
                             onClick={() => startEdit(item)}
-                            className="min-h-[56px] px-5 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl border-2 border-slate-500"
+                            className="min-h-[48px] sm:min-h-[56px] px-4 sm:px-5 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl border-2 border-slate-500 text-sm sm:text-base"
                           >
                             <Bi k="edit" />
                           </button>
                           <button
                             type="button"
                             onClick={() => deleteItem(item.id)}
-                            className="p-3 text-slate-400 hover:text-red-400 focus:ring-4 focus:ring-red-400 rounded-xl"
+                            className="p-2.5 sm:p-3 text-slate-400 hover:text-red-400 focus:ring-4 focus:ring-red-400 rounded-xl"
                             aria-label="Delete item · ఫైల్‌ను తొలగించండి"
                           >
-                            <Trash2 className="w-7 h-7" />
+                            <Trash2 className="w-6 h-6 sm:w-7 sm:h-7" />
                           </button>
                         </>
                       )}
